@@ -1,0 +1,489 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Isaak Abramovich",
+        "age": 35,
+        "date": "1943-04-12",
+        "reason": [
+          "Widerstand"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.97597105503021,
+          39.65485052111421
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Sophia Kaplan",
+        "age": 28,
+        "date": "1944-08-15",
+        "reason": [
+          "Jüdische Opfer",
+          "Jenische"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.96236298721257,
+          39.65418734147295
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Lev Rozovsky",
+        "age": 42,
+        "date": "1941-11-03",
+        "reason": [
+          "Jenische",
+          "Jüdische Opfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.98421353915782,
+          39.69970493609844
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Miriam Fishman",
+        "age": 19,
+        "date": "1942-06-20",
+        "reason": [
+          "Jüdische Opfer",
+          "Jenische"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          67.00999294611904,
+          39.6512476582879
+        ],
+        "type": "Point"
+      },
+      "id": 3
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Jakob Mendel",
+        "age": 50,
+        "date": "1945-01-13",
+        "reason": [
+          "Widerstand",
+          "Jüdische Opfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.90919791512545,
+          39.627882579756175
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Leah Zilberman",
+        "age": 31,
+        "date": "1943-09-21",
+        "reason": [
+          "Jüdische Opfer",
+          "NS-Euthanasieopfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.98660399053813,
+          39.67122368761724
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Abram Weisberg",
+        "age": 40,
+        "date": "1944-12-05",
+        "reason": [
+          "Jüdische Opfer",
+          "NS-Euthanasieopfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.99469493879607,
+          39.669752865269885
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Yakov Freilich",
+        "age": 47,
+        "date": "1942-02-18",
+        "reason": [
+          "Jüdische Opfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.923404,
+          39.664973
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Frieda Minsky",
+        "age": 23,
+        "date": "1943-07-29",
+        "reason": [
+          "Jenische"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.948202,
+          39.638945
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "David Rabinovich",
+        "age": 33,
+        "date": "1944-03-03",
+        "reason": [
+          "Widerstand",
+          "NS-Euthanasieopfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.955203,
+          39.679345
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Elena Grinberg",
+        "age": 29,
+        "date": "1943-11-12",
+        "reason": [
+          "Jüdische Opfer",
+          "Widerstand"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.967540,
+          39.646209
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Moishe Feldman",
+        "age": 52,
+        "date": "1945-06-17",
+        "reason": [
+          "NS-Euthanasieopfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.970420,
+          39.633271
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hannah Berkovitz",
+        "age": 37,
+        "date": "1942-09-09",
+        "reason": [
+          "Jüdische Opfer",
+          "Jenische"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.992301,
+          39.665733
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Yakov Freilich",
+        "age": 47,
+        "date": "1942-02-18",
+        "reason": [
+          "Jüdische Opfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.923404,
+          39.664973
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Frieda Minsky",
+        "age": 23,
+        "date": "1943-07-29",
+        "reason": [
+          "Jenische"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.948202,
+          39.638945
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "David Rabinovich",
+        "age": 33,
+        "date": "1944-03-03",
+        "reason": [
+          "Widerstand",
+          "NS-Euthanasieopfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.955203,
+          39.679345
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Elena Grinberg",
+        "age": 29,
+        "date": "1943-11-12",
+        "reason": [
+          "Jüdische Opfer",
+          "Widerstand"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.967540,
+          39.646209
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Moishe Feldman",
+        "age": 52,
+        "date": "1945-06-17",
+        "reason": [
+          "NS-Euthanasieopfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.970420,
+          39.633271
+        ],
+        "type": "Point"
+        }
+    },
+    {
+        "type": "Feature",
+        "properties": {
+          "name": "Hannah Berkovitz",
+          "age": 37,
+          "date": "1942-09-09",
+          "reason": [
+            "Jüdische Opfer",
+            "Jenische"
+          ]
+        },
+        "geometry": {
+          "coordinates": [
+            66.992301,
+            39.665733
+          ],
+          "type": "Point"
+        }
+    },
+{
+      "type": "Feature",
+      "properties": {
+        "name": "Sara Goldberg",
+        "age": 34,
+        "date": "1943-05-23",
+        "reason": [
+          "Widerstand",
+          "Jüdische Opfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.951123,
+          39.659432
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Yosef Polanski",
+        "age": 44,
+        "date": "1942-01-05",
+        "reason": [
+          "Jüdische Opfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.983201,
+          39.642789
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Nina Abramson",
+        "age": 22,
+        "date": "1943-10-18",
+        "reason": [
+          "NS-Euthanasieopfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.964982,
+          39.668902
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Benya Kagan",
+        "age": 27,
+        "date": "1944-02-14",
+        "reason": [
+          "Widerstand"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.957800,
+          39.653120
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Mira Grodsky",
+        "age": 30,
+        "date": "1945-12-09",
+        "reason": [
+          "Jenische",
+          "Jüdische Opfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.926015,
+          39.672098
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Samuil Rabin",
+        "age": 38,
+        "date": "1943-06-21",
+        "reason": [
+          "Jüdische Opfer"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.919104,
+          39.638011
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Dina Landau",
+        "age": 26,
+        "date": "1942-04-29",
+        "reason": [
+          "NS-Euthanasieopfer",
+          "Widerstand"
+        ]
+      },
+      "geometry": {
+        "coordinates": [
+          66.931567,
+          39.669012
+        ],
+        "type": "Point"
+      }
+    }
+  ]
+}

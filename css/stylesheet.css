@@ -1,0 +1,83 @@
+#container {
+    display: flex;
+    height: 100vh; /* Ensure the container takes the full viewport height */
+}
+
+#filters {
+    padding: 20px;
+    border-style: solid;
+    border-width: 2px;
+    border-color: #d3d3d3;
+    font-family: 'Teko', sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Make the filters column take the full height of the container */
+}
+
+#map {
+    flex: 1; /* Allow the map to take the remaining space */
+    height: 100%; /* Ensure the map takes the full height of the container */
+}
+
+#reset-filters {
+    margin-top: auto;
+    width: 100%;
+}
+
+.nav-link, .nav-link:hover {
+    color: black;
+}
+
+.legend-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.legend-table td {
+    padding: 5px;
+    text-align: center;
+}
+
+.legend-table td:first-child {
+    text-align: left;
+}
+
+.legend-table td:last-child {
+    width: 80px;
+    color: black;
+}
+
+#range-container,
+#legend {
+    display: none;
+}
+
+#map { height: 800px; }
+
+#reset-filters {
+    width: 100%;
+}
+
+.hidden {
+    display: none;
+}
+
+.reset-zoom-btn {
+    background-color: #6c757d; /* Match the color of the reset filters button */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: 'Teko', sans-serif; /* Match the font family */
+}
+
+.reset-zoom-btn:hover {
+    background-color: #5a6268; /* Darken the button on hover */
+}

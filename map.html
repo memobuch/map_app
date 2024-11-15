@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Memobuch</title>
+  <link rel="stylesheet" href="../css/bootstrap.css">
+  <link rel="stylesheet" href="../css/stylesheet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+  <!-- Load Google font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin=""></script>
+  <script src="../js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+<div class="row">
+    <div class="col-md-12 text-center my-4">
+      <h1 class="display-4">Memobuch</h1>
+      <h2 class="text-muted">Karten App</h2>
+    </div>
+  </div>
+  <div class="row">
+    <div id="filters" class="col-md-4">
+      <div class="bs-tabs--header">
+        <ul class="nav nav-tabs">
+          <li class="nav-item" style="cursor: pointer;"><a class="nav-link active" id="inhaltlich-tab">Inhaltlich</a></li>
+          <li class="nav-item" style="cursor: pointer;"><a class="nav-link" id="zeitlich-tab">Zeitlich</a></li>
+          <li class="nav-item" style="cursor: pointer;"><a class="nav-link" id="legend-tab">Legende</a></li>
+        </ul>
+        <br>
+      </div> <!-- TODO: generate more data-->
+      <!-- TODO: button for filter + map fullscreen-->
+      <div class="form-check"> <!-- Checkbox for each reason -->
+        <input class="form-check-input" type="checkbox" id="resistance" value="resistance" checked>
+        <label class="form-check-label" for="resistance">Widerstand</label>
+      </div>
+      <div class="form-check"> <!-- Checkbox for each reason -->
+        <input class="form-check-input" type="checkbox" id="jewish" value="jewish" checked>
+        <label class="form-check-label" for="jewish">Jüdische Opfer</label>
+      </div>
+      <div class="form-check"> <!-- Checkbox for each reason -->
+        <input class="form-check-input" type="checkbox" id="yenish" value="yenish" checked>
+        <label class="form-check-label" for="yenish">Jenische</label>
+      </div>
+      <div class="form-check"> <!-- Checkbox for each reason -->
+        <input class="form-check-input" type="checkbox" id="euthanasia" value="euthanasia" checked>
+        <label class="form-check-label" for="euthanasia">NS-Euthanasieopfer</label>
+      </div>
+      <div id="range-container">
+        <div>
+          <label for="startDateRange"></label>
+          <input type="range" id="startDateRange" min="1900" max="2100" value="1900" style="background: orange;">
+          <span id="startDateRangeValue">1900</span>
+        </div>
+        <div>
+          <label for="endDateRange"></label>
+          <input type="range" id="endDateRange" min="1900" max="2100" value="2100" style="background: orange;">
+          <span id="endDateRangeValue">2100</span>
+        </div>
+      </div>
+      <div id="legend" class="mt-3"> <!-- TODO: remove legend for now -->
+      </div>
+      <div>
+        <button id="reset-filters" class="btn btn-secondary mt-3">Alle Filter zurücksetzen</button>
+      </div>
+    </div>
+    <!-- Map container -->
+    <div id="map" class="col-md-8"></div>
+  </div>
+</div>
+
+<script>
+  let map = L.map('map').setView([39.651038058189656, 66.96310345771019], 13);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap &copy; CARTO'
+  }).addTo(map);
+
+  function getMarkerColor(reason) {
+    switch (reason) {
+      case "Widerstand": return "#ADFF2F";
+      case "Jüdische Opfer": return "#228B22";
+      case "Jenische": return "#B0A520";
+      case "NS-Euthanasieopfer": return "#ADD8E6";
+      default: return "#808080"; // TODO: BRIGHT RED
+    }
+  }
+
+  // Create a custom control for the reset zoom button
+  // noinspection JSVoidFunctionReturnValueUsed
+  L.Control.ResetZoom = L.Control.extend({
+    onAdd: function(map) {
+      var btn = L.DomUtil.create('button', 'reset-zoom-btn');
+      btn.innerHTML = 'Zoom zurücksetzen';
+      btn.title = 'Klicken Sie hier, um den Kartenzoom auf den Standardwert zurückzusetzen.'; // Add tooltip
+
+      L.DomEvent.on(btn, 'click', function() {
+        map.setView([39.651038058189656, 66.96310345771019], 13);
+      });
+
+      return btn;
+    },
+
+    onRemove: function(map) {
+      // Nothing to do here
+    }
+  });
+
+  // Add the reset zoom control to the map
+  L.control.resetZoom = function(opts) {
+    return new L.Control.ResetZoom(opts);
+  }
+
+  L.control.resetZoom({ position: 'topright' }).addTo(map);
+
+  function formatPopup(properties) {
+    return `<strong>Name:</strong> ${properties.name}<br>
+          <strong>Alter:</strong> ${properties.age}<br>
+          <strong>Datum:</strong> ${properties.date}<br>
+          <strong>Verfolgungskategorie(n):</strong> ${properties.reason.join(", ")}`;
+  }
+
+  function createLegend() {
+    const legend = document.getElementById('legend');
+    const reasons = [
+      { reason: "Widerstand", color: "#ADFF2F" },
+      { reason: "Jüdische Opfer", color: "#228B22" },
+      { reason: "Jenische", color: "#B0A520" },
+      { reason: "NS-Euthanasieopfer", color: "#ADD8E6" }
+    ];
+
+    const table = document.createElement('table');
+    table.className = 'legend-table';
+    reasons.forEach(item => {
+      const row = document.createElement('tr');
+      row.innerHTML = `<td>${item.reason}</td><td style="background: ${item.color};">${item.color}</td>`;
+      table.appendChild(row);
+    });
+    legend.appendChild(table);
+  }
+
+  // Call createLegend to populate the legend
+  createLegend();
+
+  let markersLayer = L.layerGroup().addTo(map);
+
+  function filterMarkers() {
+    markersLayer.clearLayers();
+    const startDate = parseInt(document.getElementById('startDateRange').value);
+    const endDate = parseInt(document.getElementById('endDateRange').value);
+    if (startDate > endDate) {
+      return; // Do not filter if the date range is invalid
+    }
+    fetch('../data/data.geojson')
+            .then(response => response.json())
+            .then(data => {
+              L.geoJSON(data, {
+                filter: function (feature) {
+                  const reasons = feature.properties.reason;
+                  const featureYear = new Date(feature.properties.date).getFullYear();
+                  // other option: use reasons.includes to check the whole array
+                  return featureYear >= startDate && featureYear <= endDate &&
+                          ((document.getElementById('resistance').checked && reasons[0] === "Widerstand") ||
+                                  (document.getElementById('jewish').checked && reasons[0] === "Jüdische Opfer") ||
+                                  (document.getElementById('yenish').checked && reasons[0] === "Jenische") ||
+                                  (document.getElementById('euthanasia').checked && reasons[0] === "NS-Euthanasieopfer"));
+                }, // marker color is also based on the first reason only
+                pointToLayer: function (feature, latlng) {
+                  const color = getMarkerColor(feature.properties.reason[0]);
+                  return L.circleMarker(latlng, {
+                    radius: 6,
+                    fillColor: color,
+                    color: "grey",
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 1
+                  });
+                },
+                onEachFeature: function (feature, layer) {
+                  if (feature.properties) {
+                    layer.bindPopup(formatPopup(feature.properties));
+                  }
+                  markersLayer.addLayer(layer);
+                }
+              });
+            })
+            .catch(error => console.error('Error loading GeoJSON data:', error));
+  }
+
+  // TODO: refactoring ; document query selector all, for loop and then check for reasons; be more flexible in case of reason removal
+
+// Add event listeners for the checkboxes and date range sliders
+  document.getElementById('resistance').addEventListener('change', filterMarkers);
+  document.getElementById('jewish').addEventListener('change', filterMarkers);
+  document.getElementById('yenish').addEventListener('change', filterMarkers);
+  document.getElementById('euthanasia').addEventListener('change', filterMarkers);
+  // Ensure that the start date is not greater than the end date
+  document.getElementById('startDateRange').addEventListener('input', function() {
+    const startDate = parseInt(this.value);
+    const endDate = parseInt(document.getElementById('endDateRange').value);
+    if (startDate > endDate) {
+      this.value = endDate;
+    }
+    document.getElementById('startDateRangeValue').textContent = this.value;
+    filterMarkers();
+  });
+// Ensure that the end date is not less than the start date
+  document.getElementById('endDateRange').addEventListener('input', function() {
+    const endDate = parseInt(this.value);
+    const startDate = parseInt(document.getElementById('startDateRange').value);
+    if (endDate < startDate) {
+      this.value = startDate;
+    }
+    // Update the text content of the span element to display the current value of the range slider
+    document.getElementById('endDateRangeValue').textContent = this.value;
+    filterMarkers();
+  });
+  // Call filterMarkers initially to display markers based on the initial range values
+  filterMarkers();
+  document.getElementById('legend-tab').addEventListener('click', function() {
+    const legend = document.getElementById('legend');
+    const rangeContainer = document.getElementById('range-container');
+    const checkboxes = document.querySelectorAll('#filters .form-check');
+    const resetButton = document.getElementById('reset-filters');
+
+    legend.style.display = 'block';
+    rangeContainer.style.display = 'none';
+    checkboxes.forEach(checkbox => checkbox.style.display = 'none');
+    resetButton.classList.add('hidden');
+
+    setActiveTab('legend-tab');
+  });
+
+  document.getElementById('zeitlich-tab').addEventListener('click', function() {
+    const legend = document.getElementById('legend');
+    const rangeContainer = document.getElementById('range-container');
+    const checkboxes = document.querySelectorAll('#filters .form-check');
+    const resetButton = document.getElementById('reset-filters');
+
+    legend.style.display = 'none';
+    rangeContainer.style.display = 'block';
+    checkboxes.forEach(checkbox => checkbox.style.display = 'none');
+    resetButton.classList.remove('hidden');
+
+    setActiveTab('zeitlich-tab');
+  });
+
+  const otherTabs = ['inhaltlich-tab'];
+  otherTabs.forEach(tabId => {
+    document.getElementById(tabId).addEventListener('click', function() {
+      const legend = document.getElementById('legend');
+      const rangeContainer = document.getElementById('range-container');
+      const checkboxes = document.querySelectorAll('#filters .form-check');
+      const resetButton = document.getElementById('reset-filters');
+
+      legend.style.display = 'none';
+      rangeContainer.style.display = 'none';
+      checkboxes.forEach(checkbox => checkbox.style.display = 'block');
+      resetButton.classList.remove('hidden');
+
+      setActiveTab(tabId);
+    });
+  });
+
+  document.getElementById('reset-filters').addEventListener('click', function() {
+    // Reset checkboxes
+    document.querySelectorAll('#filters .form-check-input').forEach(checkbox => {
+      checkbox.checked = true;
+    });
+
+    // Reset date ranges
+    document.getElementById('startDateRange').value = 1900;
+    document.getElementById('startDateRangeValue').textContent = 1900;
+    document.getElementById('endDateRange').value = 2100;
+    document.getElementById('endDateRangeValue').textContent = 2100;
+
+    // Reapply filters
+    filterMarkers();
+  });
+
+  function setActiveTab(activeTabId) {
+    const tabs = document.querySelectorAll('.nav-link');
+    tabs.forEach(tab => {
+      if (tab.id === activeTabId) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+  }
+</script>
+</body>
+</html>
