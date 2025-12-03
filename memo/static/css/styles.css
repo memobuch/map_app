@@ -1,0 +1,26 @@
+/* ===================================
+   MEMO - Newspaper Style CSS
+   Black & White Classic Newspaper Design
+   =================================== */
+
+/* Import classic newspaper fonts */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;700;900&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* CSS Variables for Newspaper Theme */
+:root {
+  --newspaper-black: #1a1a1a;
+  --newspaper-gray: #4a4a4a;
+  --newspaper-light-gray: #e8e8e8;
+  --newspaper-border: #2a2a2a;
+  --newspaper-bg: #fafafa;
+}
+
+/* Base Styles */
+body {
+  min-height: 100vh;
+  background: var(--newspaper-bg);
+  color: var(--newspaper-black);
+  font-family: 'PT Serif', 'Georgia', serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
