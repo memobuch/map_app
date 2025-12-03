@@ -33,6 +33,19 @@
         }
     };
 
+    const EVENT_TAG_LOOKUP = new Map([
+        ['voluntary_residence', 'voluntary_residence'],
+        ['forced_residence', 'forced_residence'],
+        ['imprisonment', 'imprisonment'],
+        ['flight', 'flight'],
+        ['death', 'death'],
+        ['freiwillige wohnadresse', 'voluntary_residence'],
+        ['erzwungene wohnadresse', 'forced_residence'],
+        ['haft', 'imprisonment'],
+        ['flucht', 'flight'],
+        ['tod', 'death']
+    ]);
+
     // ===== State Management =====
     const state = {
         map: null,
@@ -61,6 +74,125 @@
         initializeMap();
         setupEventListeners();
         loadGeoJSONData();
+    }
+
+    // ===== Tag Normalization Helpers =====
+    function splitTagParts(tag) {
+        if (!tag || typeof tag !== 'string') return [];
+        return tag
+            .split(';')
+            .map(part => part.trim())
+            .filter(Boolean);
+    }
+
+    function normalizeEventTag(tagPart) {
+        if (!tagPart) return null;
+        const normalized = String(tagPart).trim().toLowerCase();
+        return EVENT_TAG_LOOKUP.get(normalized) || null;
+    }
+
+    function asArray(value) {
+        if (!value) return [];
+        return Array.isArray(value) ? value : [value];
+    }
+
+    function collectVictimCategories(values = []) {
+        const categories = new Set();
+        asArray(values).forEach(value => {
+            splitTagParts(value).forEach(part => {
+                const eventType = normalizeEventTag(part);
+                if (!eventType) categories.add(part);
+            });
+        });
+        return Array.from(categories);
+    }
+
+    const EVENT_TYPE_PRIORITY = [
+        'voluntary_residence',
+        'forced_residence',
+        'imprisonment',
+        'flight',
+        'death'
+    ];
+
+    function parseTags(tags = []) {
+        const detectedEventTypes = new Set();
+        const categoryParts = [];
+
+        asArray(tags).forEach(tag => {
+            splitTagParts(tag).forEach(part => {
+                const normalized = normalizeEventTag(part);
+                if (normalized) {
+                    detectedEventTypes.add(normalized);
+                } else {
+                    categoryParts.push(part);
+                }
+            });
+        });
+
+        const eventType = EVENT_TYPE_PRIORITY.find(type => detectedEventTypes.has(type)) || null;
+
+        return { eventType, categoryParts };
+    }
+
+    function normalizeGeoJSONData(data) {
+        const normalizedFeatures = [];
+
+        (data.features || []).forEach(feature => {
+            const geometry = feature.geometry;
+            if (!geometry || !geometry.coordinates || geometry.coordinates.length !== 2) return;
+
+            const baseProps = feature.properties || {};
+            const events = Array.isArray(baseProps.events) && baseProps.events.length
+                ? baseProps.events
+                : [baseProps];
+
+            events.forEach(event => {
+                const tags = Array.isArray(event.tags)
+                    ? event.tags
+                    : Array.isArray(baseProps.tags)
+                        ? baseProps.tags
+                        : [];
+
+                const { eventType: tagEventType, categoryParts } = parseTags(tags);
+
+                const victimCategorySource = asArray(event.victim_categories).length
+                    ? event.victim_categories
+                    : asArray(baseProps.victim_categories).length
+                        ? baseProps.victim_categories
+                        : categoryParts;
+
+                const normalizedVictimCategories = collectVictimCategories(victimCategorySource);
+                const normalizedEventType = tagEventType
+                    || normalizeEventTag(event.event_type)
+                    || normalizeEventTag(baseProps.event_type)
+                    || event.event_type
+                    || baseProps.event_type
+                    || null;
+
+                const normalizedProps = {
+                    ...event,
+                    tags,
+                    event_type: normalizedEventType,
+                    event_type_label: event.event_type_label || (normalizedEventType ? getEventTypeLabel(normalizedEventType) : undefined),
+                    victim_categories: normalizedVictimCategories,
+                    place_name: event.place_name || baseProps.place_name
+                };
+
+                normalizedFeatures.push({
+                    type: 'Feature',
+                    geometry,
+                    properties: normalizedProps
+                });
+            });
+        });
+
+        return { ...data, features: normalizedFeatures };
+    }
+
+    function getVictimCategories(props) {
+        if (!props) return [];
+        return collectVictimCategories(props.victim_categories || props.tags || []);
     }
 
     // ===== Map Setup =====
@@ -103,7 +235,8 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            state.geojsonData = await response.json();
+            const rawData = await response.json();
+            state.geojsonData = normalizeGeoJSONData(rawData);
             console.log('Loaded GeoJSON:', state.geojsonData.metadata);
             
             // Extract all victim categories
@@ -128,15 +261,13 @@
 
     // ===== Extract Unique Victim Categories =====
     function extractVictimCategories() {
+        state.allVictimCategories.clear();
+        state.activeVictimCategories.clear();
+
         state.geojsonData.features.forEach(feature => {
-            const categories = feature.properties.victim_categories || [];
-            categories.forEach(cat => {
-                // Extract the main category (split on semicolon)
-                const mainCat = cat.split(';')[0].trim();
-                if (mainCat) {
-                    state.allVictimCategories.add(mainCat);
-                    state.activeVictimCategories.add(mainCat);
-                }
+            getVictimCategories(feature.properties).forEach(cat => {
+                state.allVictimCategories.add(cat);
+                state.activeVictimCategories.add(cat);
             });
         });
         console.log('Found victim categories:', Array.from(state.allVictimCategories));
@@ -173,16 +304,16 @@
             const aggregate = state.locationAggregates.get(key);
             aggregate.events.push(props);
             aggregate.persons.add(props.person_id);
-            aggregate.eventTypeCounts[props.event_type]++;
-            
+
+            if (props.event_type && Object.prototype.hasOwnProperty.call(aggregate.eventTypeCounts, props.event_type)) {
+                aggregate.eventTypeCounts[props.event_type]++;
+            }
+
             // Count victim categories
-            const categories = props.victim_categories || [];
+            const categories = getVictimCategories(props);
             categories.forEach(cat => {
-                const mainCat = cat.split(';')[0].trim();
-                if (mainCat) {
-                    aggregate.victimCategoryCounts[mainCat] = 
-                        (aggregate.victimCategoryCounts[mainCat] || 0) + 1;
-                }
+                aggregate.victimCategoryCounts[cat] =
+                    (aggregate.victimCategoryCounts[cat] || 0) + 1;
             });
         });
         
@@ -207,11 +338,13 @@
                 maxWidth: 350,
                 className: 'custom-popup'
             });
-            
+
+            const victimCategories = getVictimCategories(props);
+
             state.allPointMarkers.push({
                 marker: marker,
                 eventType: props.event_type,
-                victimCategories: props.victim_categories || [],
+                victimCategories,
                 properties: props
             });
         });
@@ -274,9 +407,8 @@
             
             // Check victim category
             if (state.activeVictimCategories.size === 0) return true;
-            
-            const itemCategories = item.victimCategories.map(cat => cat.split(';')[0].trim());
-            return itemCategories.some(cat => state.activeVictimCategories.has(cat));
+
+            return item.victimCategories.some(cat => state.activeVictimCategories.has(cat));
         });
         
         console.log(`Rendering ${filteredMarkers.length} point markers`);
@@ -551,9 +683,8 @@
             visibleCount = state.allPointMarkers.filter(item => {
                 if (!state.activeEventTypes.has(item.eventType)) return false;
                 if (state.activeVictimCategories.size === 0) return true;
-                const itemCats = item.victimCategories.map(c => c.split(';')[0].trim());
-                return itemCats.some(cat => state.activeVictimCategories.has(cat));
-            }).length;
+            return item.victimCategories.some(cat => state.activeVictimCategories.has(cat));
+        }).length;
         }
         
         document.getElementById('visible-events').textContent = visibleCount.toLocaleString('de-DE');
