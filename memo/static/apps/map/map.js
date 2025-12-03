@@ -1,12 +1,13 @@
 /**
  * MEMO Digitales Memobuch - Enhanced Public Map
- * Version 2.0 - Aggregate View with Proportional Symbols
+ * Version 2.1 - REFACTORED for Unified Tags Structure
  * 
- * Features:
- * - Dual view modes: Aggregate (sized circles) + Point view
+ * MAJOR CHANGES:
+ * - Supports unified "tags" array (event_types + victim_categories combined)
+ * - Handles both aggregated features (with events array) and single-person features
+ * - Separates event_types from victim_categories using predefined EVENT_TYPES list
+ * - Maintains dual view modes: Aggregate (sized circles) + Point view
  * - Multi-dimensional filtering (event type + victim category)
- * - Handles overlapping coordinates
- * - Enhanced statistics and insights
  */
 
 (function() {
@@ -33,6 +34,16 @@
         }
     };
 
+    // ===== PREDEFINED EVENT TYPES =====
+    // This list determines what is an event_type vs victim_category
+    const EVENT_TYPES = new Set([
+        'voluntary_residence',
+        'forced_residence',
+        'imprisonment',
+        'flight',
+        'death'
+    ]);
+
     // ===== State Management =====
     const state = {
         map: null,
@@ -57,7 +68,7 @@
 
     // ===== Initialization =====
     function init() {
-        console.log('Initializing MEMO Enhanced Map...');
+        console.log('Initializing MEMO Enhanced Map (v2.1 - Unified Tags)...');
         initializeMap();
         setupEventListeners();
         loadGeoJSONData();
@@ -85,14 +96,75 @@
         
         state.pointsMarkerCluster = L.markerClusterGroup({
             maxClusterRadius: CONFIG.clusterRadius,
-            spiderfyOnMaxZoom: true,
+            spiderfyOnMaxZoom: false, // DISABLED: Show popup instead
             showCoverageOnHover: false,
-            zoomToBoundsOnClick: true,
+            zoomToBoundsOnClick: false, // DISABLED: Handle click manually
             iconCreateFunction: createClusterIcon
+        });
+        
+        // Custom cluster click handler - show multi-person popup instead of spiderfying
+        state.pointsMarkerCluster.on('clusterclick', function(e) {
+            const cluster = e.layer;
+            const markers = cluster.getAllChildMarkers();
+            
+            // Group markers by person to avoid duplicates
+            const personsMap = new Map();
+            markers.forEach(marker => {
+                const item = state.allPointMarkers.find(m => m.marker === marker);
+                if (item && item.properties) {
+                    const personId = item.properties.person_id;
+                    if (!personsMap.has(personId)) {
+                        personsMap.set(personId, {
+                            properties: item.properties,
+                            eventTypes: new Set(),
+                            victimCategories: item.victimCategories
+                        });
+                    }
+                    personsMap.get(personId).eventTypes.add(item.eventType);
+                }
+            });
+            
+            // Create and show multi-person popup
+            const popup = L.popup({
+                maxWidth: 500,
+                maxHeight: 400,
+                className: 'cluster-popup'
+            })
+            .setLatLng(cluster.getLatLng())
+            .setContent(createClusterPopupContent(personsMap, cluster.getLatLng()))
+            .openOn(state.map);
         });
 
         // Add legend
         addLegend();
+    }
+
+    // ===== TAGS PARSING =====
+    /**
+     * Parse unified tags array into event_types and victim_categories
+     * Uses predefined EVENT_TYPES list to separate them
+     */
+    function parseTags(tags) {
+        if (!tags || !Array.isArray(tags)) {
+            return { eventTypes: [], victimCategories: [] };
+        }
+
+        const eventTypes = [];
+        const victimCategories = [];
+
+        tags.forEach(tag => {
+            if (EVENT_TYPES.has(tag)) {
+                eventTypes.push(tag);
+            } else {
+                // This is a victim category - extract main category (split on semicolon)
+                const mainCategory = tag.split(';')[0].trim();
+                if (mainCategory) {
+                    victimCategories.push(mainCategory);
+                }
+            }
+        });
+
+        return { eventTypes, victimCategories };
     }
 
     // ===== Load and Process Data =====
@@ -105,6 +177,10 @@
             
             state.geojsonData = await response.json();
             console.log('Loaded GeoJSON:', state.geojsonData.metadata);
+            console.log('Total features:', state.geojsonData.features.length);
+            
+            // Process features and extract categories
+            processFeatures();
             
             // Extract all victim categories
             extractVictimCategories();
@@ -126,23 +202,65 @@
         }
     }
 
+    // ===== Process Features =====
+    /**
+     * Process features to normalize structure:
+     * - Features with "events" array: aggregated (multiple persons at same location)
+     * - Features without "events": single person
+     */
+    function processFeatures() {
+        console.log('Processing features...');
+        
+        state.geojsonData.features.forEach((feature, idx) => {
+            const props = feature.properties;
+            
+            // Check if this is an aggregated feature (has events array)
+            if (props.events && Array.isArray(props.events)) {
+                // Aggregated feature - we'll handle this in aggregate view
+                console.log(`Feature ${idx}: Aggregated (${props.events.length} events)`);
+            } else {
+                // Single person feature - parse tags from feature level
+                const parsed = parseTags(props.tags);
+                console.log(`Feature ${idx}: Single person, event_types: ${parsed.eventTypes}, victims: ${parsed.victimCategories}`);
+            }
+        });
+    }
+
     // ===== Extract Unique Victim Categories =====
     function extractVictimCategories() {
+        state.allVictimCategories.clear();
+        state.activeVictimCategories.clear();
+
         state.geojsonData.features.forEach(feature => {
-            const categories = feature.properties.victim_categories || [];
-            categories.forEach(cat => {
-                // Extract the main category (split on semicolon)
-                const mainCat = cat.split(';')[0].trim();
-                if (mainCat) {
-                    state.allVictimCategories.add(mainCat);
-                    state.activeVictimCategories.add(mainCat);
-                }
-            });
+            const props = feature.properties;
+            
+            // Handle aggregated features
+            if (props.events && Array.isArray(props.events)) {
+                props.events.forEach(event => {
+                    const parsed = parseTags(event.tags);
+                    parsed.victimCategories.forEach(cat => {
+                        state.allVictimCategories.add(cat);
+                        state.activeVictimCategories.add(cat);
+                    });
+                });
+            } else {
+                // Handle single person features
+                const parsed = parseTags(props.tags);
+                parsed.victimCategories.forEach(cat => {
+                    state.allVictimCategories.add(cat);
+                    state.activeVictimCategories.add(cat);
+                });
+            }
         });
+        
         console.log('Found victim categories:', Array.from(state.allVictimCategories));
     }
 
     // ===== Aggregate Data by Location =====
+    /**
+     * Aggregate features by location for the aggregate view
+     * Option B: Show aggregated features as one marker with multiple persons
+     */
     function aggregateDataByLocation() {
         state.locationAggregates.clear();
         
@@ -151,12 +269,13 @@
             const key = `${coords[0]},${coords[1]}`;
             const props = feature.properties;
             
+            // Initialize aggregate if doesn't exist
             if (!state.locationAggregates.has(key)) {
                 state.locationAggregates.set(key, {
                     coordinates: coords,
                     lat: coords[1],
                     lng: coords[0],
-                    place_name: props.place_name,
+                    place_name: props.place_name || props.events?.[0]?.place_name || 'Unbekannter Ort',
                     events: [],
                     persons: new Set(),
                     eventTypeCounts: {
@@ -171,19 +290,45 @@
             }
             
             const aggregate = state.locationAggregates.get(key);
-            aggregate.events.push(props);
-            aggregate.persons.add(props.person_id);
-            aggregate.eventTypeCounts[props.event_type]++;
             
-            // Count victim categories
-            const categories = props.victim_categories || [];
-            categories.forEach(cat => {
-                const mainCat = cat.split(';')[0].trim();
-                if (mainCat) {
-                    aggregate.victimCategoryCounts[mainCat] = 
-                        (aggregate.victimCategoryCounts[mainCat] || 0) + 1;
-                }
-            });
+            // Handle aggregated features (with events array)
+            if (props.events && Array.isArray(props.events)) {
+                props.events.forEach(event => {
+                    const parsed = parseTags(event.tags);
+                    
+                    // Add to aggregate
+                    aggregate.events.push(event);
+                    aggregate.persons.add(event.person_id);
+                    
+                    // Count event types
+                    parsed.eventTypes.forEach(eventType => {
+                        aggregate.eventTypeCounts[eventType]++;
+                    });
+                    
+                    // Count victim categories
+                    parsed.victimCategories.forEach(cat => {
+                        aggregate.victimCategoryCounts[cat] = 
+                            (aggregate.victimCategoryCounts[cat] || 0) + 1;
+                    });
+                });
+            } else {
+                // Handle single person features
+                const parsed = parseTags(props.tags);
+                
+                aggregate.events.push(props);
+                aggregate.persons.add(props.person_id);
+                
+                // Count event types
+                parsed.eventTypes.forEach(eventType => {
+                    aggregate.eventTypeCounts[eventType]++;
+                });
+                
+                // Count victim categories
+                parsed.victimCategories.forEach(cat => {
+                    aggregate.victimCategoryCounts[cat] = 
+                        (aggregate.victimCategoryCounts[cat] || 0) + 1;
+                });
+            }
         });
         
         console.log(`Aggregated ${state.locationAggregates.size} unique locations`);
@@ -194,26 +339,58 @@
         state.allPointMarkers = [];
         
         state.geojsonData.features.forEach(feature => {
-            const props = feature.properties;
             const coords = feature.geometry.coordinates;
+            const props = feature.properties;
             
             if (!coords || coords.length !== 2) return;
             
-            const marker = L.marker([coords[1], coords[0]], {
-                icon: createPointIcon(props)
-            });
-            
-            marker.bindPopup(createPointPopupContent(props), {
-                maxWidth: 350,
-                className: 'custom-popup'
-            });
-            
-            state.allPointMarkers.push({
-                marker: marker,
-                eventType: props.event_type,
-                victimCategories: props.victim_categories || [],
-                properties: props
-            });
+            // Handle aggregated features (with events array) - create marker for EACH event
+            if (props.events && Array.isArray(props.events)) {
+                props.events.forEach(event => {
+                    const parsed = parseTags(event.tags);
+                    
+                    // Create a marker for each event
+                    parsed.eventTypes.forEach(eventType => {
+                        const marker = L.marker([coords[1], coords[0]], {
+                            icon: createPointIcon(eventType)
+                        });
+                        
+                        marker.bindPopup(createPointPopupContent(event, eventType), {
+                            maxWidth: 350,
+                            className: 'custom-popup'
+                        });
+                        
+                        state.allPointMarkers.push({
+                            marker: marker,
+                            eventType: eventType,
+                            victimCategories: parsed.victimCategories,
+                            properties: event
+                        });
+                    });
+                });
+            } else {
+                // Handle single person features
+                const parsed = parseTags(props.tags);
+                
+                // Create a marker for each event type
+                parsed.eventTypes.forEach(eventType => {
+                    const marker = L.marker([coords[1], coords[0]], {
+                        icon: createPointIcon(eventType)
+                    });
+                    
+                    marker.bindPopup(createPointPopupContent(props, eventType), {
+                        maxWidth: 350,
+                        className: 'custom-popup'
+                    });
+                    
+                    state.allPointMarkers.push({
+                        marker: marker,
+                        eventType: eventType,
+                        victimCategories: parsed.victimCategories,
+                        properties: props
+                    });
+                });
+            }
         });
         
         console.log(`Created ${state.allPointMarkers.length} point markers`);
@@ -275,8 +452,7 @@
             // Check victim category
             if (state.activeVictimCategories.size === 0) return true;
             
-            const itemCategories = item.victimCategories.map(cat => cat.split(';')[0].trim());
-            return itemCategories.some(cat => state.activeVictimCategories.has(cat));
+            return item.victimCategories.some(cat => state.activeVictimCategories.has(cat));
         });
         
         console.log(`Rendering ${filteredMarkers.length} point markers`);
@@ -354,8 +530,8 @@
     }
 
     // ===== Create Icons =====
-    function createPointIcon(props) {
-        const color = CONFIG.colors[props.event_type] || '#666';
+    function createPointIcon(eventType) {
+        const color = CONFIG.colors[eventType] || '#666';
         const svgIcon = `
             <svg width="20" height="20" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" fill="${color}" stroke="#fff" stroke-width="2"/>
@@ -365,7 +541,7 @@
         
         return L.divIcon({
             html: svgIcon,
-            className: `custom-marker marker-${props.event_type}`,
+            className: `custom-marker marker-${eventType}`,
             iconSize: [20, 20],
             iconAnchor: [10, 10],
             popupAnchor: [0, -10]
@@ -384,6 +560,101 @@
             className: `marker-cluster marker-cluster-${size}`,
             iconSize: L.point(40, 40)
         });
+    }
+
+    // ===== Popup Content =====
+    
+    /**
+     * Create popup content for clusters (multiple persons at same location)
+     * Organized efficiently to show all persons without overwhelming the UI
+     */
+    function createClusterPopupContent(personsMap, latlng) {
+        const personsArray = Array.from(personsMap.values());
+        const personCount = personsArray.length;
+        
+        // Get place name from first person
+        const placeName = personsArray[0]?.properties?.place_name || 'Unbekannter Ort';
+        
+        // Count total events
+        let totalEvents = 0;
+        personsArray.forEach(person => {
+            totalEvents += person.eventTypes.size;
+        });
+        
+        let html = '<div class="popup-content cluster-popup-content">';
+        
+        // Header with summary
+        html += '<div class="popup-header">';
+        html += `<div class="popup-name" style="font-size: 1.1rem;">${escapeHtml(placeName)}</div>`;
+        html += `<div class="popup-summary" style="margin-top: 0.5rem; padding: 0.5rem; background: #f5f5f0; border-left: 4px solid #1a1a1a;">`;
+        html += `<strong>${personCount}</strong> Person${personCount !== 1 ? 'en' : ''} • `;
+        html += `<strong>${totalEvents}</strong> Ereignis${totalEvents !== 1 ? 'se' : ''}`;
+        html += `</div>`;
+        html += '</div>';
+        
+        // Persons list - compact and scrollable
+        html += '<div class="popup-section">';
+        html += '<div class="popup-label">Personen an diesem Ort</div>';
+        html += '<div class="persons-list">';
+        
+        // Sort persons by name
+        personsArray.sort((a, b) => {
+            const nameA = a.properties.person_name || '';
+            const nameB = b.properties.person_name || '';
+            return nameA.localeCompare(nameB, 'de');
+        });
+        
+        personsArray.forEach((person, index) => {
+            const props = person.properties;
+            const name = props.person_name || 'Unbekannt';
+            const birthYear = props.birth_date ? props.birth_date.split('.').pop() : '?';
+            const deathYear = props.death_date ? props.death_date.split('.').pop() : '?';
+            const gamsLink = props.gams_link || '';
+            
+            // Event types for this person
+            const eventTypesList = Array.from(person.eventTypes)
+                .map(type => getEventTypeLabel(type))
+                .join(', ');
+            
+            // Victim categories
+            const victimCats = person.victimCategories.length > 0 
+                ? person.victimCategories.join(', ') 
+                : '';
+            
+            html += '<div class="person-item">';
+            html += `<div class="person-name">`;
+            
+            if (gamsLink) {
+                html += `<a href="${escapeHtml(gamsLink)}" target="_blank" rel="noopener" class="person-link">`;
+                html += `${escapeHtml(name)}`;
+                html += `</a>`;
+            } else {
+                html += `<strong>${escapeHtml(name)}</strong>`;
+            }
+            
+            html += ` <span class="person-years">(${birthYear}–${deathYear})</span>`;
+            html += `</div>`;
+            
+            html += `<div class="person-details">`;
+            html += `<span class="detail-item">${escapeHtml(eventTypesList)}</span>`;
+            if (victimCats) {
+                html += ` • <span class="detail-item victim-cat">${escapeHtml(victimCats)}</span>`;
+            }
+            html += `</div>`;
+            
+            html += '</div>';
+            
+            // Add separator between persons (except last)
+            if (index < personsArray.length - 1) {
+                html += '<div class="person-separator"></div>';
+            }
+        });
+        
+        html += '</div>'; // persons-list
+        html += '</div>'; // popup-section
+        
+        html += '</div>';
+        return html;
     }
 
     // ===== Popup Content =====
@@ -446,20 +717,23 @@
         return html;
     }
 
-    function createPointPopupContent(props) {
+    function createPointPopupContent(props, eventType) {
         const name = props.person_name || 'Unbekannt';
-        const eventType = props.event_type_label || getEventTypeLabel(props.event_type);
+        const eventTypeLabel = getEventTypeLabel(eventType);
         const placeName = props.place_name || 'Unbekannt';
         const date = props.date || 'Datum unbekannt';
         const birthDate = props.birth_date || 'Unbekannt';
         const deathDate = props.death_date || '';
         const gamsLink = props.gams_link || '';
+        
+        // Parse victim categories from tags
+        const parsed = parseTags(props.tags);
 
         let html = '<div class="popup-content">';
         
         html += '<div class="popup-header">';
         html += `<div class="popup-name">${escapeHtml(name)}</div>`;
-        html += `<div class="popup-event-type">${escapeHtml(eventType)}</div>`;
+        html += `<div class="popup-event-type">${escapeHtml(eventTypeLabel)}</div>`;
         html += '</div>';
 
         html += '<div class="popup-section">';
@@ -478,10 +752,10 @@
         }
         html += '</div>';
 
-        if (props.victim_categories && props.victim_categories.length > 0) {
+        if (parsed.victimCategories && parsed.victimCategories.length > 0) {
             html += '<div class="popup-section">';
             html += '<div class="popup-label">Opferkategorie</div>';
-            html += `<div class="popup-value">${escapeHtml(props.victim_categories.join(', '))}</div>`;
+            html += `<div class="popup-value">${escapeHtml(parsed.victimCategories.join(', '))}</div>`;
             html += '</div>';
         }
 
@@ -551,8 +825,7 @@
             visibleCount = state.allPointMarkers.filter(item => {
                 if (!state.activeEventTypes.has(item.eventType)) return false;
                 if (state.activeVictimCategories.size === 0) return true;
-                const itemCats = item.victimCategories.map(c => c.split(';')[0].trim());
-                return itemCats.some(cat => state.activeVictimCategories.has(cat));
+                return item.victimCategories.some(cat => state.activeVictimCategories.has(cat));
             }).length;
         }
         

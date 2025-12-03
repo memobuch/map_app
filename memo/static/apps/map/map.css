@@ -411,6 +411,96 @@ body {
     font-family: 'Courier New', monospace;
 }
 
+/* ===== Cluster Popup - Multi-Person List ===== */
+.cluster-popup-content {
+    min-width: 400px;
+    max-width: 500px;
+}
+
+.persons-list {
+    max-height: 350px;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.person-item {
+    padding: 0.75rem 0.5rem;
+    transition: background-color 0.2s ease;
+}
+
+.person-item:hover {
+    background-color: #f5f5f0;
+}
+
+.person-name {
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+}
+
+.person-name strong {
+    color: #1a1a1a;
+    font-weight: 700;
+}
+
+.person-link {
+    color: #1a1a1a;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid #1a1a1a;
+    transition: all 0.2s ease;
+}
+
+.person-link:hover {
+    color: #2196F3;
+    border-bottom-color: #2196F3;
+}
+
+.person-years {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 400;
+}
+
+.person-details {
+    font-size: 0.8rem;
+    color: #666;
+    line-height: 1.5;
+}
+
+.detail-item {
+    display: inline;
+}
+
+.victim-cat {
+    font-style: italic;
+    color: #888;
+}
+
+.person-separator {
+    height: 1px;
+    background: linear-gradient(to right, #ddd 0%, #ddd 80%, transparent 100%);
+    margin: 0.5rem 0;
+}
+
+/* Scrollbar styling for person list */
+.persons-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.persons-list::-webkit-scrollbar-track {
+    background: #f5f5f0;
+}
+
+.persons-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.persons-list::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
 /* Victim Categories in Popup */
 .victim-categories {
     display: flex;
