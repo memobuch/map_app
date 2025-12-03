@@ -1,10 +1,37 @@
 {
   "type": "FeatureCollection",
+  "vocab": {
+    "event_types": {
+      "voluntary_residence": "Letzte Freiwillige Wohnadresse",
+      "forced_residence": "Erzwungene Wohnadresse",
+      "imprisonment": "Haft",
+      "flight": "Flucht",
+      "death": "Tod"
+    },
+    "victim_category_types": {
+      "widerstand;politisch": "Widerstand, politisch",
+      "widerstand;religiös": "Widerstand, religios",
+      "widerstand;individuell": "Widerstand, individuell",
+      "widerstand;deserteure": "Widerstand, Deserteure",
+      "zeugenjehovas": "Zeugen Jehovas",
+      "jüdischeopfer;jüdisch": "Jüdische Opfer",
+      "jüdischeopfer;als Jude verfolgt": "Jüdische Opfer, als Jude verfolgt",
+      "roma": "Roma",
+      "euthanasieopfer": "Euthanasie Opfer",
+      "homosexuelleopfer": "Homosexuelle Opfer",
+      "opfernsjustiz": "Opfer der NS-Justiz",
+      "asoziale": "Asoziale",
+      "spanienkämpfer": "SpanienkämpferInnen",
+      "zwangsarbeiter": "ZwangsarbeiterInnen",
+      "alliierte": "Alliierte Soldaten",
+      "zivileopfer": "Zivile Opfer"
+    }
+  },
   "metadata": {
     "project": "MEMO - Digitales Memobuch",
     "total_persons": 691,
     "total_location_events": 347,
-    "generated": "2025-12-03T13:46:37.496249"
+    "generated": "2025-12-03T15:30:04.216358"
   },
   "features": [
     {
