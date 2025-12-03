@@ -1,31 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Memobuch</title>
-  
-  <link rel="stylesheet" href="/memo/static/css/styles.css">
-  
-</head>
-<body>
-
-  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEMO - Digitales Memobuch der Stadt Graz</title>
+    
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Leaflet MarkerCluster CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <!-- Custom CSS for the map -->
-    <link rel="stylesheet" href="/memo/static/apps/map/map.css">
-
     
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/memo/static/apps/map/map.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">Digitales Memobuch</h1>
+                <p class="subtitle">Opfer des Nationalsozialismus in Graz 1938-1945</p>
+                <div class="divider"></div>
+            </div>
+        </header>
 
-    <section>
+        <!-- View Mode Selector -->
+        <div class="view-mode-panel">
+            <div class="view-mode-content">
+                <div class="view-mode-title">Ansichtsmodus</div>
+                <div class="view-mode-buttons">
+                    <button class="view-mode-btn active" data-mode="aggregate">
+                        <span class="btn-icon">◉</span>
+                        <div class="btn-content">
+                            <div class="btn-label">Ortkonzentration</div>
+                            <div class="btn-description">Größe zeigt Anzahl der Ereignisse</div>
+                        </div>
+                    </button>
+                    <button class="view-mode-btn" data-mode="points">
+                        <span class="btn-icon">⬤</span>
+                        <div class="btn-content">
+                            <div class="btn-label">Einzelne Ereignisse</div>
+                            <div class="btn-description">Jedes Ereignis als separater Punkt</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-         <!-- Filter Controls -->
+        <!-- Filter Controls -->
         <div class="controls-panel">
             <div class="controls-content">
+                <!-- Event Type Filters -->
                 <div class="filter-section">
                     <h3 class="filter-title">Ereignistypen filtern</h3>
                     <div class="filter-grid">
@@ -66,7 +93,16 @@
                         </label>
                     </div>
                 </div>
+
+                <!-- Victim Category Filters -->
+                <div class="filter-section">
+                    <h3 class="filter-title">Opferkategorien filtern</h3>
+                    <div class="filter-grid" id="victim-category-filters">
+                        <!-- Dynamically populated from data -->
+                    </div>
+                </div>
                 
+                <!-- Statistics -->
                 <div class="stats-section">
                     <div class="stat-item">
                         <span class="stat-label">Personen:</span>
@@ -86,7 +122,33 @@
 
         <!-- Map Container -->
         <div id="map" class="map-container"></div>
-    </section>
+
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <div class="info-content">
+                <h3>Über diese Karte</h3>
+                <p>
+                    Diese interaktive Karte visualisiert die Schicksale von 
+                    <strong id="person-count-text">691 Personen</strong>, die während der 
+                    nationalsozialistischen Herrschaft in Graz verfolgt wurden.
+                </p>
+                <p>
+                    <strong>Ortkonzentration-Ansicht:</strong> Zeigt, wo sich Ereignisse konzentrierten. 
+                    Größere Kreise bedeuten mehr Ereignisse am selben Ort.
+                </p>
+                <p>
+                    <strong>Einzelereignis-Ansicht:</strong> Zeigt jedes Ereignis als separaten Punkt. 
+                    Besonders hilfreich für detaillierte Recherchen.
+                </p>
+                <p class="info-link">
+                    <a href="https://gams.uni-graz.at/o:memo" target="_blank" rel="noopener">
+                        Mehr Informationen zum MEMO-Projekt →
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -95,6 +157,5 @@
     
     <!-- Custom JS -->
     <script src="/memo/static/apps/map/map.js"></script>
-
 </body>
 </html>

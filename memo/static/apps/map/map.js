@@ -1,6 +1,12 @@
 /**
- * MEMO Digitales Memobuch - Map Visualization
- * Interactive map for Holocaust victim data from Graz
+ * MEMO Digitales Memobuch - Enhanced Public Map
+ * Version 2.0 - Aggregate View with Proportional Symbols
+ * 
+ * Features:
+ * - Dual view modes: Aggregate (sized circles) + Point view
+ * - Multi-dimensional filtering (event type + victim category)
+ * - Handles overlapping coordinates
+ * - Enhanced statistics and insights
  */
 
 (function() {
@@ -8,26 +14,50 @@
 
     // ===== Configuration =====
     const CONFIG = {
-        geojsonFile: '/memo/static/apps/map/EVENTS.json', // GeoJSON file name (place in same directory)
-        mapCenter: [47.0707, 15.4395], // Graz coordinates
-        mapZoom: 12,
-        minZoom: 6,
+        geojsonFile: '/memo/static/apps/map/EVENTS.json',
+        mapCenter: [47.0707, 15.4395], // Graz
+        mapZoom: 7,
+        minZoom: 5,
         maxZoom: 18,
-        clusterMaxZoom: 15, // Clusters disappear at this zoom level
-        clusterRadius: 50 // Cluster radius in pixels
+        clusterRadius: 50,
+        // Proportional symbol scaling
+        circleBaseRadius: 5,
+        circleScaleFactor: 3,
+        // Colors
+        colors: {
+            voluntary_residence: '#2196F3',
+            forced_residence: '#FF9800',
+            imprisonment: '#F44336',
+            flight: '#9C27B0',
+            death: '#000000'
+        }
     };
 
     // ===== State Management =====
     const state = {
         map: null,
-        markerClusterGroup: null,
         geojsonData: null,
-        allMarkers: [],
-        activeFilters: new Set(['voluntary_residence', 'forced_residence', 'imprisonment', 'flight', 'death'])
+        viewMode: 'aggregate', // 'aggregate' or 'points'
+        
+        // Layers
+        aggregateLayer: null,
+        pointsMarkerCluster: null,
+        
+        // Aggregated data
+        locationAggregates: new Map(),
+        
+        // Filters
+        activeEventTypes: new Set(['voluntary_residence', 'forced_residence', 'imprisonment', 'flight', 'death']),
+        activeVictimCategories: new Set(), // Will be populated from data
+        allVictimCategories: new Set(),
+        
+        // Original point markers
+        allPointMarkers: []
     };
 
     // ===== Initialization =====
     function init() {
+        console.log('Initializing MEMO Enhanced Map...');
         initializeMap();
         setupEventListeners();
         loadGeoJSONData();
@@ -35,7 +65,6 @@
 
     // ===== Map Setup =====
     function initializeMap() {
-        // Create map
         state.map = L.map('map', {
             center: CONFIG.mapCenter,
             zoom: CONFIG.mapZoom,
@@ -44,36 +73,311 @@
             zoomControl: true
         });
 
-        // Add tile layer - using CartoDB Positron for clean B&W look
+        // CartoDB Positron basemap
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
             subdomains: 'abcd',
             maxZoom: CONFIG.maxZoom
         }).addTo(state.map);
 
-        // Initialize marker cluster group with custom styling
-        state.markerClusterGroup = L.markerClusterGroup({
+        // Initialize layers
+        state.aggregateLayer = L.layerGroup().addTo(state.map);
+        
+        state.pointsMarkerCluster = L.markerClusterGroup({
             maxClusterRadius: CONFIG.clusterRadius,
             spiderfyOnMaxZoom: true,
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
-            disableClusteringAtZoom: CONFIG.clusterMaxZoom,
             iconCreateFunction: createClusterIcon
         });
 
-        state.map.addLayer(state.markerClusterGroup);
+        // Add legend
+        addLegend();
     }
 
-    // ===== Custom Cluster Icon =====
+    // ===== Load and Process Data =====
+    async function loadGeoJSONData() {
+        try {
+            const response = await fetch(CONFIG.geojsonFile);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            state.geojsonData = await response.json();
+            console.log('Loaded GeoJSON:', state.geojsonData.metadata);
+            
+            // Extract all victim categories
+            extractVictimCategories();
+            
+            // Process data
+            aggregateDataByLocation();
+            createPointMarkers();
+            
+            // Setup victim category filters UI
+            setupVictimCategoryFilters();
+            
+            // Initial render
+            updateVisualization();
+            updateStatistics();
+            
+        } catch (error) {
+            console.error('Error loading data:', error);
+            showError('Fehler beim Laden der Kartendaten.');
+        }
+    }
+
+    // ===== Extract Unique Victim Categories =====
+    function extractVictimCategories() {
+        state.geojsonData.features.forEach(feature => {
+            const categories = feature.properties.victim_categories || [];
+            categories.forEach(cat => {
+                // Extract the main category (split on semicolon)
+                const mainCat = cat.split(';')[0].trim();
+                if (mainCat) {
+                    state.allVictimCategories.add(mainCat);
+                    state.activeVictimCategories.add(mainCat);
+                }
+            });
+        });
+        console.log('Found victim categories:', Array.from(state.allVictimCategories));
+    }
+
+    // ===== Aggregate Data by Location =====
+    function aggregateDataByLocation() {
+        state.locationAggregates.clear();
+        
+        state.geojsonData.features.forEach(feature => {
+            const coords = feature.geometry.coordinates;
+            const key = `${coords[0]},${coords[1]}`;
+            const props = feature.properties;
+            
+            if (!state.locationAggregates.has(key)) {
+                state.locationAggregates.set(key, {
+                    coordinates: coords,
+                    lat: coords[1],
+                    lng: coords[0],
+                    place_name: props.place_name,
+                    events: [],
+                    persons: new Set(),
+                    eventTypeCounts: {
+                        voluntary_residence: 0,
+                        forced_residence: 0,
+                        imprisonment: 0,
+                        flight: 0,
+                        death: 0
+                    },
+                    victimCategoryCounts: {}
+                });
+            }
+            
+            const aggregate = state.locationAggregates.get(key);
+            aggregate.events.push(props);
+            aggregate.persons.add(props.person_id);
+            aggregate.eventTypeCounts[props.event_type]++;
+            
+            // Count victim categories
+            const categories = props.victim_categories || [];
+            categories.forEach(cat => {
+                const mainCat = cat.split(';')[0].trim();
+                if (mainCat) {
+                    aggregate.victimCategoryCounts[mainCat] = 
+                        (aggregate.victimCategoryCounts[mainCat] || 0) + 1;
+                }
+            });
+        });
+        
+        console.log(`Aggregated ${state.locationAggregates.size} unique locations`);
+    }
+
+    // ===== Create Point Markers (for point view) =====
+    function createPointMarkers() {
+        state.allPointMarkers = [];
+        
+        state.geojsonData.features.forEach(feature => {
+            const props = feature.properties;
+            const coords = feature.geometry.coordinates;
+            
+            if (!coords || coords.length !== 2) return;
+            
+            const marker = L.marker([coords[1], coords[0]], {
+                icon: createPointIcon(props)
+            });
+            
+            marker.bindPopup(createPointPopupContent(props), {
+                maxWidth: 350,
+                className: 'custom-popup'
+            });
+            
+            state.allPointMarkers.push({
+                marker: marker,
+                eventType: props.event_type,
+                victimCategories: props.victim_categories || [],
+                properties: props
+            });
+        });
+        
+        console.log(`Created ${state.allPointMarkers.length} point markers`);
+    }
+
+    // ===== Render Aggregate View (Proportional Circles) =====
+    function renderAggregateView() {
+        state.aggregateLayer.clearLayers();
+        
+        const filteredAggregates = getFilteredAggregates();
+        console.log(`Rendering ${filteredAggregates.length} aggregate locations`);
+        
+        filteredAggregates.forEach(aggregate => {
+            const totalEvents = calculateFilteredEventCount(aggregate);
+            if (totalEvents === 0) return;
+            
+            // Determine dominant event type (for coloring)
+            const dominantType = getDominantEventType(aggregate);
+            const color = CONFIG.colors[dominantType];
+            
+            // Calculate radius (proportional to count)
+            const radius = calculateCircleRadius(totalEvents);
+            
+            // Create circle marker
+            const circle = L.circle([aggregate.lat, aggregate.lng], {
+                radius: radius,
+                fillColor: color,
+                fillOpacity: 0.5,
+                color: '#000',
+                weight: 2,
+                className: 'aggregate-circle'
+            });
+            
+            circle.bindPopup(createAggregatePopupContent(aggregate), {
+                maxWidth: 400,
+                className: 'aggregate-popup'
+            });
+            
+            // Tooltip on hover
+            circle.bindTooltip(
+                `<strong>${aggregate.place_name || 'Unbekannter Ort'}</strong><br>` +
+                `${totalEvents} Ereignis${totalEvents !== 1 ? 'se' : ''}` +
+                `<br>${aggregate.persons.size} Person${aggregate.persons.size !== 1 ? 'en' : ''}`,
+                { direction: 'top', offset: [0, -10] }
+            );
+            
+            state.aggregateLayer.addLayer(circle);
+        });
+    }
+
+    // ===== Render Points View =====
+    function renderPointsView() {
+        state.pointsMarkerCluster.clearLayers();
+        
+        const filteredMarkers = state.allPointMarkers.filter(item => {
+            // Check event type
+            if (!state.activeEventTypes.has(item.eventType)) return false;
+            
+            // Check victim category
+            if (state.activeVictimCategories.size === 0) return true;
+            
+            const itemCategories = item.victimCategories.map(cat => cat.split(';')[0].trim());
+            return itemCategories.some(cat => state.activeVictimCategories.has(cat));
+        });
+        
+        console.log(`Rendering ${filteredMarkers.length} point markers`);
+        
+        filteredMarkers.forEach(item => {
+            state.pointsMarkerCluster.addLayer(item.marker);
+        });
+    }
+
+    // ===== Update Visualization Based on Current Mode =====
+    function updateVisualization() {
+        if (state.viewMode === 'aggregate') {
+            // Switch to aggregate view
+            state.map.removeLayer(state.pointsMarkerCluster);
+            if (!state.map.hasLayer(state.aggregateLayer)) {
+                state.map.addLayer(state.aggregateLayer);
+            }
+            renderAggregateView();
+        } else {
+            // Switch to points view
+            state.map.removeLayer(state.aggregateLayer);
+            if (!state.map.hasLayer(state.pointsMarkerCluster)) {
+                state.map.addLayer(state.pointsMarkerCluster);
+            }
+            renderPointsView();
+        }
+        
+        updateStatistics();
+    }
+
+    // ===== Filter Helpers =====
+    function getFilteredAggregates() {
+        return Array.from(state.locationAggregates.values()).filter(aggregate => {
+            // Check if has any events of active types
+            const hasActiveEventType = Object.keys(aggregate.eventTypeCounts).some(
+                type => state.activeEventTypes.has(type) && aggregate.eventTypeCounts[type] > 0
+            );
+            
+            if (!hasActiveEventType) return false;
+            
+            // Check victim categories
+            if (state.activeVictimCategories.size === 0) return true;
+            
+            const aggregateCategories = Object.keys(aggregate.victimCategoryCounts);
+            return aggregateCategories.some(cat => state.activeVictimCategories.has(cat));
+        });
+    }
+
+    function calculateFilteredEventCount(aggregate) {
+        let count = 0;
+        state.activeEventTypes.forEach(type => {
+            count += aggregate.eventTypeCounts[type] || 0;
+        });
+        return count;
+    }
+
+    function getDominantEventType(aggregate) {
+        let maxCount = 0;
+        let dominantType = 'voluntary_residence';
+        
+        state.activeEventTypes.forEach(type => {
+            const count = aggregate.eventTypeCounts[type] || 0;
+            if (count > maxCount) {
+                maxCount = count;
+                dominantType = type;
+            }
+        });
+        
+        return dominantType;
+    }
+
+    function calculateCircleRadius(count) {
+        // Square root scaling for area (more visually accurate)
+        return Math.sqrt(count) * CONFIG.circleScaleFactor * 100; // meters
+    }
+
+    // ===== Create Icons =====
+    function createPointIcon(props) {
+        const color = CONFIG.colors[props.event_type] || '#666';
+        const svgIcon = `
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" fill="${color}" stroke="#fff" stroke-width="2"/>
+                <circle cx="12" cy="12" r="4" fill="#fff" opacity="0.8"/>
+            </svg>
+        `;
+        
+        return L.divIcon({
+            html: svgIcon,
+            className: `custom-marker marker-${props.event_type}`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+            popupAnchor: [0, -10]
+        });
+    }
+
     function createClusterIcon(cluster) {
         const count = cluster.getChildCount();
         let size = 'small';
         
-        if (count > 100) {
-            size = 'large';
-        } else if (count > 20) {
-            size = 'medium';
-        }
+        if (count > 100) size = 'large';
+        else if (count > 20) size = 'medium';
 
         return L.divIcon({
             html: `<div><span>${count}</span></div>`,
@@ -82,201 +386,152 @@
         });
     }
 
-    // ===== Load GeoJSON Data =====
-    async function loadGeoJSONData() {
-        try {
-            const response = await fetch(CONFIG.geojsonFile);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            state.geojsonData = await response.json();
-            
-            // Update statistics
-            updateStatistics();
-            
-            // Process and add markers
-            processGeoJSONData();
-            
-        } catch (error) {
-            console.error('Error loading GeoJSON:', error);
-            alert('Fehler beim Laden der Kartendaten. Bitte stellen Sie sicher, dass die Datei "EVENTS.json" im gleichen Verzeichnis liegt.');
-        }
-    }
-
-    // ===== Process GeoJSON and Create Markers =====
-    function processGeoJSONData() {
-        if (!state.geojsonData || !state.geojsonData.features) {
-            console.error('Invalid GeoJSON data');
-            return;
-        }
-
-        // Clear existing markers
-        state.allMarkers = [];
-        state.markerClusterGroup.clearLayers();
-
-        // Create markers for each feature
-        state.geojsonData.features.forEach((feature) => {
-            const marker = createMarkerFromFeature(feature);
-            if (marker) {
-                state.allMarkers.push({
-                    marker: marker,
-                    eventType: feature.properties.event_type,
-                    feature: feature
-                });
-            }
-        });
-
-        // Apply initial filter
-        updateMarkerVisibility();
-    }
-
-    // ===== Create Individual Marker =====
-    function createMarkerFromFeature(feature) {
-        const props = feature.properties;
-        const coords = feature.geometry.coordinates;
-
-        // Validate coordinates
-        if (!coords || coords.length !== 2 || isNaN(coords[0]) || isNaN(coords[1])) {
-            console.warn('Invalid coordinates for feature:', feature);
-            return null;
-        }
-
-        // Create custom icon based on event type
-        const icon = createCustomIcon(props);
-
-        // Create marker (note: Leaflet uses [lat, lng], GeoJSON uses [lng, lat])
-        const marker = L.marker([coords[1], coords[0]], { icon: icon });
-
-        // Create and bind popup
-        const popupContent = createPopupContent(props);
-        marker.bindPopup(popupContent, {
-            maxWidth: 350,
-            minWidth: 280,
-            className: 'custom-popup'
-        });
-
-        return marker;
-    }
-
-    // ===== Create Custom Icon =====
-    function createCustomIcon(properties) {
-        const color = properties.marker_color || '#666666';
-        const eventType = properties.event_type || 'unknown';
+    // ===== Popup Content =====
+    function createAggregatePopupContent(aggregate) {
+        const totalEvents = calculateFilteredEventCount(aggregate);
+        const personCount = aggregate.persons.size;
         
-        // SVG icon with color
-        const svgIcon = `
-            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" fill="${color}" stroke="#fff" stroke-width="2"/>
-                <circle cx="12" cy="12" r="4" fill="#fff" opacity="0.8"/>
-            </svg>
-        `;
-
-        return L.divIcon({
-            html: svgIcon,
-            className: `custom-marker marker-${eventType}`,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
-            popupAnchor: [0, -12]
+        let html = '<div class="popup-content aggregate-popup-content">';
+        
+        // Header
+        html += '<div class="popup-header">';
+        html += `<div class="popup-name" style="font-size: 1.1rem;">${escapeHtml(aggregate.place_name || 'Unbekannter Ort')}</div>`;
+        html += '</div>';
+        
+        // Summary
+        html += '<div class="popup-section">';
+        html += `<div class="popup-summary">`;
+        html += `<strong>${totalEvents}</strong> Ereignis${totalEvents !== 1 ? 'se' : ''} • `;
+        html += `<strong>${personCount}</strong> Person${personCount !== 1 ? 'en' : ''}`;
+        html += `</div>`;
+        html += '</div>';
+        
+        // Event type breakdown
+        html += '<div class="popup-section">';
+        html += '<div class="popup-label">Ereignisse nach Typ</div>';
+        html += '<div class="event-breakdown">';
+        
+        Object.entries(aggregate.eventTypeCounts).forEach(([type, count]) => {
+            if (count > 0 && state.activeEventTypes.has(type)) {
+                const label = getEventTypeLabel(type);
+                const color = CONFIG.colors[type];
+                html += `
+                    <div class="event-type-row">
+                        <span class="color-dot" style="background-color: ${color};"></span>
+                        <span class="event-type-label">${label}:</span>
+                        <span class="event-type-count">${count}</span>
+                    </div>
+                `;
+            }
         });
+        
+        html += '</div></div>';
+        
+        // Victim categories
+        if (Object.keys(aggregate.victimCategoryCounts).length > 0) {
+            html += '<div class="popup-section">';
+            html += '<div class="popup-label">Opferkategorien</div>';
+            html += '<div class="victim-categories">';
+            
+            Object.entries(aggregate.victimCategoryCounts).forEach(([cat, count]) => {
+                if (state.activeVictimCategories.size === 0 || state.activeVictimCategories.has(cat)) {
+                    html += `<div class="category-tag">${escapeHtml(cat)} (${count})</div>`;
+                }
+            });
+            
+            html += '</div></div>';
+        }
+        
+        html += '</div>';
+        return html;
     }
 
-    // ===== Create Popup Content =====
-    function createPopupContent(props) {
+    function createPointPopupContent(props) {
         const name = props.person_name || 'Unbekannt';
-        const eventType = props.event_type_label || props.event_type || 'Unbekannt';
+        const eventType = props.event_type_label || getEventTypeLabel(props.event_type);
         const placeName = props.place_name || 'Unbekannt';
         const date = props.date || 'Datum unbekannt';
         const birthDate = props.birth_date || 'Unbekannt';
-        const deathDate = props.death_date || 'Unbekannt';
-        const victimCategories = props.victim_categories ? props.victim_categories.join(', ') : 'Keine Angabe';
+        const deathDate = props.death_date || '';
         const gamsLink = props.gams_link || '';
 
         let html = '<div class="popup-content">';
         
-        // Header
         html += '<div class="popup-header">';
         html += `<div class="popup-name">${escapeHtml(name)}</div>`;
         html += `<div class="popup-event-type">${escapeHtml(eventType)}</div>`;
         html += '</div>';
 
-        // Location
         html += '<div class="popup-section">';
         html += '<div class="popup-label">Ort</div>';
         html += `<div class="popup-value">${escapeHtml(placeName)}</div>`;
-        if (date && date !== 'Datum unbekannt') {
+        if (date !== 'Datum unbekannt') {
             html += `<div class="popup-value" style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">${escapeHtml(date)}</div>`;
         }
         html += '</div>';
 
-        // Biographical data
         html += '<div class="popup-section">';
         html += '<div class="popup-label">Lebensdaten</div>';
         html += `<div class="popup-value">Geboren: ${escapeHtml(birthDate)}</div>`;
-        if (deathDate && deathDate !== 'Unbekannt') {
+        if (deathDate) {
             html += `<div class="popup-value">Gestorben: ${escapeHtml(deathDate)}</div>`;
         }
         html += '</div>';
 
-        // Victim categories
-        if (victimCategories !== 'Keine Angabe') {
+        if (props.victim_categories && props.victim_categories.length > 0) {
             html += '<div class="popup-section">';
             html += '<div class="popup-label">Opferkategorie</div>';
-            html += `<div class="popup-value">${escapeHtml(victimCategories)}</div>`;
+            html += `<div class="popup-value">${escapeHtml(props.victim_categories.join(', '))}</div>`;
             html += '</div>';
         }
 
-        // Event description (if available)
-        if (props.event_description) {
-            html += '<div class="popup-section">';
-            html += '<div class="popup-label">Beschreibung</div>';
-            html += `<div class="popup-value">${escapeHtml(props.event_description)}</div>`;
-            html += '</div>';
-        }
-
-        // GAMS link
         if (gamsLink) {
-            html += `<a href="${escapeHtml(gamsLink)}" target="_blank" rel="noopener noreferrer" class="popup-link">Mehr erfahren →</a>`;
+            html += `<a href="${escapeHtml(gamsLink)}" target="_blank" rel="noopener" class="popup-link">Mehr erfahren →</a>`;
         }
 
         html += '</div>';
-
         return html;
     }
 
-    // ===== Filter Management =====
-    function updateMarkerVisibility() {
-        state.markerClusterGroup.clearLayers();
-
-        const visibleMarkers = state.allMarkers.filter(item => 
-            state.activeFilters.has(item.eventType)
-        );
-
-        visibleMarkers.forEach(item => {
-            state.markerClusterGroup.addLayer(item.marker);
-        });
-
-        // Update visible count
-        document.getElementById('visible-events').textContent = visibleMarkers.length.toLocaleString('de-DE');
-    }
-
-    function toggleFilter(eventType, isChecked) {
-        if (isChecked) {
-            state.activeFilters.add(eventType);
-        } else {
-            state.activeFilters.delete(eventType);
-        }
+    // ===== Legend =====
+    function addLegend() {
+        const legend = L.control({ position: 'bottomright' });
         
-        updateMarkerVisibility();
+        legend.onAdd = function() {
+            const div = L.DomUtil.create('div', 'map-legend');
+            div.innerHTML = `
+                <div class="legend-title">Ereignistypen</div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: ${CONFIG.colors.voluntary_residence}"></span>
+                    Freiwillige Wohnadresse
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: ${CONFIG.colors.forced_residence}"></span>
+                    Erzwungene Wohnadresse
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: ${CONFIG.colors.imprisonment}"></span>
+                    Haft
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: ${CONFIG.colors.flight}"></span>
+                    Flucht
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: ${CONFIG.colors.death}"></span>
+                    Tod
+                </div>
+            `;
+            return div;
+        };
+        
+        legend.addTo(state.map);
     }
 
     // ===== Statistics =====
     function updateStatistics() {
-        if (!state.geojsonData || !state.geojsonData.metadata) {
-            return;
-        }
-
+        if (!state.geojsonData) return;
+        
         const metadata = state.geojsonData.metadata;
         
         document.getElementById('total-persons').textContent = 
@@ -285,23 +540,118 @@
         document.getElementById('total-events').textContent = 
             (metadata.total_location_events || 0).toLocaleString('de-DE');
         
-        document.getElementById('visible-events').textContent = 
-            (metadata.total_location_events || 0).toLocaleString('de-DE');
+        // Calculate visible events
+        let visibleCount = 0;
+        if (state.viewMode === 'aggregate') {
+            const filtered = getFilteredAggregates();
+            filtered.forEach(agg => {
+                visibleCount += calculateFilteredEventCount(agg);
+            });
+        } else {
+            visibleCount = state.allPointMarkers.filter(item => {
+                if (!state.activeEventTypes.has(item.eventType)) return false;
+                if (state.activeVictimCategories.size === 0) return true;
+                const itemCats = item.victimCategories.map(c => c.split(';')[0].trim());
+                return itemCats.some(cat => state.activeVictimCategories.has(cat));
+            }).length;
+        }
+        
+        document.getElementById('visible-events').textContent = visibleCount.toLocaleString('de-DE');
     }
 
     // ===== Event Listeners =====
     function setupEventListeners() {
-        // Filter checkboxes
-        const checkboxes = document.querySelectorAll('.filter-checkbox input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', (e) => {
-                const eventType = e.target.dataset.eventType;
-                toggleFilter(eventType, e.target.checked);
+        // View mode toggle
+        document.querySelectorAll('.view-mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const mode = e.target.dataset.mode;
+                switchViewMode(mode);
             });
+        });
+        
+        // Event type filters
+        document.querySelectorAll('.filter-checkbox input[type="checkbox"]').forEach(checkbox => {
+            if (checkbox.dataset.eventType) {
+                checkbox.addEventListener('change', (e) => {
+                    toggleEventTypeFilter(e.target.dataset.eventType, e.target.checked);
+                });
+            }
         });
     }
 
+    function setupVictimCategoryFilters() {
+        const container = document.getElementById('victim-category-filters');
+        if (!container) return;
+        
+        // Sort categories alphabetically
+        const sortedCategories = Array.from(state.allVictimCategories).sort();
+        
+        sortedCategories.forEach(category => {
+            const label = document.createElement('label');
+            label.className = 'filter-checkbox';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = true;
+            checkbox.dataset.victimCategory = category;
+            
+            checkbox.addEventListener('change', (e) => {
+                toggleVictimCategoryFilter(category, e.target.checked);
+            });
+            
+            const span = document.createElement('span');
+            span.className = 'filter-label';
+            span.textContent = category;
+            
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            container.appendChild(label);
+        });
+    }
+
+    function switchViewMode(mode) {
+        if (mode === state.viewMode) return;
+        
+        state.viewMode = mode;
+        
+        // Update button states
+        document.querySelectorAll('.view-mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+        
+        updateVisualization();
+    }
+
+    function toggleEventTypeFilter(eventType, isChecked) {
+        if (isChecked) {
+            state.activeEventTypes.add(eventType);
+        } else {
+            state.activeEventTypes.delete(eventType);
+        }
+        updateVisualization();
+    }
+
+    function toggleVictimCategoryFilter(category, isChecked) {
+        if (isChecked) {
+            state.activeVictimCategories.add(category);
+        } else {
+            state.activeVictimCategories.delete(category);
+        }
+        updateVisualization();
+    }
+
     // ===== Utility Functions =====
+    function getEventTypeLabel(type) {
+        const labels = {
+            voluntary_residence: 'Freiwillige Wohnadresse',
+            forced_residence: 'Erzwungene Wohnadresse',
+            imprisonment: 'Haft',
+            flight: 'Flucht',
+            death: 'Tod'
+        };
+        return labels[type] || type;
+    }
+
     function escapeHtml(text) {
         if (!text) return '';
         const map = {
@@ -314,7 +664,11 @@
         return text.replace(/[&<>"']/g, m => map[m]);
     }
 
-    // ===== Initialize on DOM Ready =====
+    function showError(message) {
+        alert(message);
+    }
+
+    // ===== Initialize =====
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

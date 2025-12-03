@@ -1,9 +1,10 @@
 /* ===================================
-   MEMO Map Visualization Styles
+   MEMO Enhanced Map - Styles
    Black/White Newspaper Aesthetic
+   Version 2.0
    =================================== */
 
-/* ===== Reset & Base Styles ===== */
+/* ===== Reset & Base ===== */
 * {
     margin: 0;
     padding: 0;
@@ -14,9 +15,9 @@ body {
     background-color: #f5f5f0;
     color: #1a1a1a;
     line-height: 1.6;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* ===== Container ===== */
 .container {
     max-width: 100%;
     margin: 0 auto;
@@ -57,26 +58,112 @@ body {
     margin-top: 1rem;
 }
 
+/* ===== View Mode Panel ===== */
+.view-mode-panel {
+    background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+    color: #f5f5f0;
+    padding: 1.5rem;
+    border-bottom: 3px solid #000;
+}
+
+.view-mode-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.view-mode-title {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.view-mode-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.view-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: #f5f5f0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    text-align: left;
+}
+
+.view-mode-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.view-mode-btn.active {
+    background-color: #f5f5f0;
+    color: #1a1a1a;
+    border-color: #f5f5f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.view-mode-btn .btn-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.view-mode-btn.active .btn-icon {
+    color: #1a1a1a;
+}
+
+.btn-content {
+    flex: 1;
+}
+
+.btn-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.btn-description {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.view-mode-btn.active .btn-description {
+    opacity: 0.7;
+}
+
 /* ===== Controls Panel ===== */
 .controls-panel {
     background-color: #fff;
     border-bottom: 3px double #1a1a1a;
     padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .controls-content {
     max-width: 1400px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr 1fr auto;
     gap: 2rem;
     align-items: start;
 }
 
 .filter-section {
+    padding-right: 1.5rem;
     border-right: 1px solid #ddd;
-    padding-right: 2rem;
+}
+
+.filter-section:last-of-type {
+    border-right: none;
 }
 
 .filter-title {
@@ -91,7 +178,7 @@ body {
 
 .filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 0.75rem;
 }
 
@@ -128,7 +215,7 @@ body {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 1px solid rgba(0,0,0,0.2);
+    border: 1px solid rgba(0, 0, 0, 0.2);
     flex-shrink: 0;
 }
 
@@ -137,7 +224,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding-left: 1rem;
+    min-width: 200px;
 }
 
 .stat-item {
@@ -170,87 +257,98 @@ body {
     width: 100%;
     border: 2px solid #1a1a1a;
     box-shadow: inset 0 0 0 4px #f5f5f0;
+    position: relative;
 }
 
-/* ===== Footer ===== */
-.footer {
-    background-color: #1a1a1a;
-    color: #f5f5f0;
-    padding: 1.5rem;
-    border-top: 4px solid #000;
-    text-align: center;
+/* ===== Map Legend ===== */
+.map-legend {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem;
+    border: 2px solid #1a1a1a;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.footer-content {
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-.footer-text {
+.legend-title {
     font-size: 0.9rem;
-    margin: 0.5rem 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 0.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+/* ===== Aggregate Circles ===== */
+.aggregate-circle {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.aggregate-circle:hover {
     opacity: 0.8;
 }
 
-.footer-text a {
-    color: #f5f5f0;
-    text-decoration: underline;
-    transition: opacity 0.2s ease;
-}
-
-.footer-text a:hover {
-    opacity: 0.7;
-}
-
-/* ===== Leaflet Popup Customization ===== */
+/* ===== Popups ===== */
 .leaflet-popup-content-wrapper {
-    font-family: 'Georgia', 'Times New Roman', serif;
     border: 2px solid #1a1a1a;
     border-radius: 0;
-    box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
 }
 
 .leaflet-popup-content {
     margin: 0;
-    padding: 0;
-    min-width: 280px;
+    font-family: inherit;
 }
 
 .popup-content {
     padding: 1rem;
+    min-width: 280px;
+}
+
+.aggregate-popup-content {
+    min-width: 320px;
 }
 
 .popup-header {
-    background-color: #1a1a1a;
-    color: #f5f5f0;
-    padding: 0.75rem 1rem;
-    margin: 0 -1rem 1rem -1rem;
-    border-bottom: 3px solid #000;
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .popup-name {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
+    color: #1a1a1a;
     margin-bottom: 0.25rem;
 }
 
 .popup-event-type {
     font-size: 0.85rem;
+    color: #666;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    opacity: 0.9;
 }
 
 .popup-section {
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px dotted #ddd;
+    margin-bottom: 1rem;
 }
 
 .popup-section:last-child {
     margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
 }
 
 .popup-label {
@@ -258,18 +356,80 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #666;
-    margin-bottom: 0.25rem;
     font-weight: 600;
+    margin-bottom: 0.5rem;
 }
 
 .popup-value {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: #1a1a1a;
+    line-height: 1.5;
+}
+
+.popup-summary {
+    font-size: 1rem;
+    color: #1a1a1a;
+    padding: 0.75rem;
+    background-color: #f5f5f0;
+    border-left: 4px solid #1a1a1a;
+}
+
+/* Event Breakdown in Aggregate Popup */
+.event-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.event-type-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: #fafafa;
+    border-left: 3px solid transparent;
+}
+
+.color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.event-type-label {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.event-type-count {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #1a1a1a;
+    font-family: 'Courier New', monospace;
+}
+
+/* Victim Categories in Popup */
+.victim-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.category-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: #1a1a1a;
+    color: #f5f5f0;
+    font-size: 0.8rem;
+    border-radius: 2px;
 }
 
 .popup-link {
     display: inline-block;
-    margin-top: 0.5rem;
+    margin-top: 1rem;
     padding: 0.5rem 1rem;
     background-color: #1a1a1a;
     color: #f5f5f0;
@@ -290,7 +450,35 @@ body {
     border: 1px solid #1a1a1a;
 }
 
-/* ===== Marker Cluster Customization ===== */
+/* ===== Tooltips ===== */
+.leaflet-tooltip {
+    background: rgba(26, 26, 26, 0.95);
+    color: #f5f5f0;
+    border: 2px solid #1a1a1a;
+    border-radius: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.leaflet-tooltip-top:before {
+    border-top-color: #1a1a1a;
+}
+
+.leaflet-tooltip-bottom:before {
+    border-bottom-color: #1a1a1a;
+}
+
+.leaflet-tooltip-left:before {
+    border-left-color: #1a1a1a;
+}
+
+.leaflet-tooltip-right:before {
+    border-right-color: #1a1a1a;
+}
+
+/* ===== Marker Clusters ===== */
 .marker-cluster-small,
 .marker-cluster-medium,
 .marker-cluster-large {
@@ -307,7 +495,65 @@ body {
     font-family: 'Courier New', monospace;
 }
 
+/* ===== Info Panel ===== */
+.info-panel {
+    background-color: #fff;
+    border-top: 3px double #1a1a1a;
+    padding: 2rem 1.5rem;
+}
+
+.info-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.info-content h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.info-content p {
+    margin-bottom: 1rem;
+    line-height: 1.7;
+    color: #333;
+}
+
+.info-link {
+    margin-top: 1.5rem;
+}
+
+.info-link a {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background-color: #1a1a1a;
+    color: #f5f5f0;
+    text-decoration: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: background-color 0.3s ease;
+}
+
+.info-link a:hover {
+    background-color: #333;
+}
+
 /* ===== Responsive Design ===== */
+@media (max-width: 1024px) {
+    .controls-content {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .stats-section {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        justify-content: space-around;
+    }
+}
+
 @media (max-width: 768px) {
     .title {
         font-size: 1.8rem;
@@ -315,6 +561,10 @@ body {
     
     .subtitle {
         font-size: 0.95rem;
+    }
+    
+    .view-mode-buttons {
+        grid-template-columns: 1fr;
     }
     
     .controls-content {
@@ -329,8 +579,14 @@ body {
         padding-bottom: 1.5rem;
     }
     
+    .filter-section:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    
     .stats-section {
         padding-left: 0;
+        flex-direction: column;
     }
     
     .filter-grid {
@@ -340,11 +596,17 @@ body {
     .map-container {
         height: 60vh;
     }
+    
+    .popup-content {
+        min-width: 240px;
+    }
 }
 
 /* ===== Print Styles ===== */
 @media print {
-    .controls-panel {
+    .view-mode-panel,
+    .controls-panel,
+    .info-panel {
         display: none;
     }
     
@@ -352,4 +614,32 @@ body {
         height: 80vh;
         border: 2px solid #000;
     }
+}
+
+/* ===== Accessibility ===== */
+.view-mode-btn:focus,
+.filter-checkbox:focus-within,
+button:focus,
+a:focus {
+    outline: 2px solid #2196F3;
+    outline-offset: 2px;
+}
+
+/* ===== Loading State ===== */
+.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: 'Lade Daten...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(26, 26, 26, 0.9);
+    color: #f5f5f0;
+    padding: 1rem 2rem;
+    font-weight: 700;
+    z-index: 10000;
 }
