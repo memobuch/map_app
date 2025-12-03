@@ -63,6 +63,7 @@
         activeEventTypes: new Set(['voluntary_residence', 'forced_residence', 'imprisonment', 'flight', 'death']),
         activeVictimCategories: new Set(), // Will be populated from data
         allVictimCategories: new Set(),
+        victimCategoryLabels: new Map(),
         
         // Original point markers
         allPointMarkers: []
@@ -96,12 +97,28 @@
         return Array.isArray(value) ? value : [value];
     }
 
+    function normalizeVictimCategory(category) {
+        if (!category) return null;
+        const label = String(category).trim();
+        if (!label) return null;
+
+        const key = label.toLowerCase();
+        state.victimCategoryLabels.set(key, label);
+
+        return { key, label };
+    }
+
     function collectVictimCategories(values = []) {
         const categories = new Set();
         asArray(values).forEach(value => {
             splitTagParts(value).forEach(part => {
                 const eventType = normalizeEventTag(part);
-                if (!eventType) categories.add(part);
+                if (eventType) return;
+
+                const normalizedCategory = normalizeVictimCategory(part);
+                if (normalizedCategory) {
+                    categories.add(normalizedCategory.key);
+                }
             });
         });
         return Array.from(categories);
@@ -230,6 +247,9 @@
     // ===== Load and Process Data =====
     async function loadGeoJSONData() {
         try {
+            state.victimCategoryLabels.clear();
+            resetVictimCategoryFilters();
+
             const response = await fetch(CONFIG.geojsonFile);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -257,6 +277,12 @@
             console.error('Error loading data:', error);
             showError('Fehler beim Laden der Kartendaten.');
         }
+    }
+
+    function resetVictimCategoryFilters() {
+        const container = document.getElementById('victim-category-filters');
+        if (!container) return;
+        container.innerHTML = '';
     }
 
     // ===== Extract Unique Victim Categories =====
@@ -558,16 +584,17 @@
         });
         
         html += '</div></div>';
-        
+
         // Victim categories
         if (Object.keys(aggregate.victimCategoryCounts).length > 0) {
             html += '<div class="popup-section">';
             html += '<div class="popup-label">Opferkategorien</div>';
             html += '<div class="victim-categories">';
-            
+
             Object.entries(aggregate.victimCategoryCounts).forEach(([cat, count]) => {
                 if (state.activeVictimCategories.size === 0 || state.activeVictimCategories.has(cat)) {
-                    html += `<div class="category-tag">${escapeHtml(cat)} (${count})</div>`;
+                    const label = getVictimCategoryLabel(cat);
+                    html += `<div class="category-tag">${escapeHtml(label)} (${count})</div>`;
                 }
             });
             
@@ -613,7 +640,10 @@
         if (props.victim_categories && props.victim_categories.length > 0) {
             html += '<div class="popup-section">';
             html += '<div class="popup-label">Opferkategorie</div>';
-            html += `<div class="popup-value">${escapeHtml(props.victim_categories.join(', '))}</div>`;
+            const labels = props.victim_categories
+                .map(getVictimCategoryLabel)
+                .filter(Boolean);
+            html += `<div class="popup-value">${escapeHtml(labels.join(', '))}</div>`;
             html += '</div>';
         }
 
@@ -665,11 +695,17 @@
         if (!state.geojsonData) return;
         
         const metadata = state.geojsonData.metadata;
-        
-        document.getElementById('total-persons').textContent = 
+
+        document.getElementById('total-persons').textContent =
             (metadata.total_persons || 0).toLocaleString('de-DE');
-        
-        document.getElementById('total-events').textContent = 
+
+        const personCountText = document.getElementById('person-count-text');
+        if (personCountText) {
+            const count = metadata.total_persons || 0;
+            personCountText.textContent = `${count.toLocaleString('de-DE')} Personen`;
+        }
+
+        document.getElementById('total-events').textContent =
             (metadata.total_location_events || 0).toLocaleString('de-DE');
         
         // Calculate visible events
@@ -683,8 +719,8 @@
             visibleCount = state.allPointMarkers.filter(item => {
                 if (!state.activeEventTypes.has(item.eventType)) return false;
                 if (state.activeVictimCategories.size === 0) return true;
-            return item.victimCategories.some(cat => state.activeVictimCategories.has(cat));
-        }).length;
+                return item.victimCategories.some(cat => state.activeVictimCategories.has(cat));
+            }).length;
         }
         
         document.getElementById('visible-events').textContent = visibleCount.toLocaleString('de-DE');
@@ -713,14 +749,26 @@
     function setupVictimCategoryFilters() {
         const container = document.getElementById('victim-category-filters');
         if (!container) return;
-        
+
+        container.innerHTML = '';
+
         // Sort categories alphabetically
         const sortedCategories = Array.from(state.allVictimCategories).sort();
-        
+
+        if (sortedCategories.length === 0) {
+            const emptyState = document.createElement('div');
+            emptyState.className = 'filter-empty-state';
+            emptyState.textContent = 'Keine Opferkategorien in den Daten vorhanden.';
+            container.appendChild(emptyState);
+            return;
+        }
+
         sortedCategories.forEach(category => {
             const label = document.createElement('label');
             label.className = 'filter-checkbox';
-            
+
+            const displayLabel = getVictimCategoryLabel(category);
+
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = true;
@@ -729,10 +777,10 @@
             checkbox.addEventListener('change', (e) => {
                 toggleVictimCategoryFilter(category, e.target.checked);
             });
-            
+
             const span = document.createElement('span');
             span.className = 'filter-label';
-            span.textContent = category;
+            span.textContent = displayLabel;
             
             label.appendChild(checkbox);
             label.appendChild(span);
@@ -781,6 +829,11 @@
             death: 'Tod'
         };
         return labels[type] || type;
+    }
+
+    function getVictimCategoryLabel(key) {
+        if (!key) return '';
+        return state.victimCategoryLabels.get(key) || key;
     }
 
     function escapeHtml(text) {
