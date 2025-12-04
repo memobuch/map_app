@@ -265,15 +265,33 @@
     }
 
     function orderPoints(points) {
-        const voluntary = points
-            .filter(point => (point.properties.tags || []).includes('voluntary_residence'))
-            .sort((a, b) => dateScore(a.properties.date) - dateScore(b.properties.date));
+        const withSortingMeta = points.map((point, index) => ({
+            ...point,
+            _sortScore: dateScore(point.properties.date),
+            _originalIndex: index,
+            _isDeath: (point.properties.tags || []).includes('death')
+        }));
 
-        const others = points
-            .filter(point => !(point.properties.tags || []).includes('voluntary_residence'))
-            .sort((a, b) => dateScore(a.properties.date) - dateScore(b.properties.date));
+        const sortChronologically = (a, b) => {
+            if (a._sortScore !== b._sortScore) {
+                return a._sortScore - b._sortScore;
+            }
+            return a._originalIndex - b._originalIndex;
+        };
 
-        return [...voluntary, ...others];
+        const nonDeathPoints = withSortingMeta
+            .filter(point => !point._isDeath)
+            .sort(sortChronologically);
+
+        const deathPoints = withSortingMeta
+            .filter(point => point._isDeath)
+            .sort(sortChronologically);
+
+        return [...nonDeathPoints, ...deathPoints].map(point => ({
+            index: point.index,
+            coords: point.coords,
+            properties: point.properties
+        }));
     }
 
     function addLegend() {
