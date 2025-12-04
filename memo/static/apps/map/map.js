@@ -837,7 +837,7 @@
         // View mode toggle
         document.querySelectorAll('.view-mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const mode = e.target.dataset.mode;
+                const mode = e.currentTarget.dataset.mode;
                 switchViewMode(mode);
             });
         });
