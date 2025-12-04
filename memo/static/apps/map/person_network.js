@@ -62,6 +62,7 @@
             }
 
             state.geojsonData = await response.json();
+            updatePageTitle();
             renderPersonNetwork();
         } catch (error) {
             console.error('Error loading data:', error);
@@ -90,10 +91,14 @@
 
     function addMarkers(points) {
         state.markers = points.map(point => {
+            const isVoluntaryResidence = Array.isArray(point.properties.tags)
+                && point.properties.tags.includes('voluntary_residence');
+
             const marker = L.circleMarker(point.coords, {
-                radius: 10,
-                weight: 2,
+                radius: isVoluntaryResidence ? 14 : 10,
+                weight: isVoluntaryResidence ? 3 : 2,
                 color: '#FFFFFF',
+                className: isVoluntaryResidence ? 'voluntary-marker' : '',
                 fillColor: getEventColor(point.properties.tags),
                 fillOpacity: 0.9
             });
@@ -143,6 +148,17 @@
     function getEventColor(tags = []) {
         const eventType = tags.find(tag => EVENT_TYPES.has(tag));
         return CONFIG.colors[eventType] || '#546E7A';
+    }
+
+    function updatePageTitle() {
+        const titleElement = document.getElementById('person-network-title');
+        if (!titleElement) return;
+
+        const personName = state.geojsonData?.metadata?.person_name
+            || state.geojsonData?.features?.[0]?.properties?.person_name
+            || 'Unbekannte Person';
+
+        titleElement.textContent = `Personenbezogene Netzwerk-Ansicht: ${personName}`;
     }
 
     function createPopupContent(point) {
