@@ -733,3 +733,49 @@ a:focus {
     font-weight: 700;
     z-index: 10000;
 }
+/* ===== Person Network Additions ===== */
+.station-label {
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.station-label--start {
+    background: linear-gradient(135deg, #FFCA28 0%, #FFB300 100%);
+    color: #000;
+    border-color: #000;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+.station-label span {
+    line-height: 1;
+}
+
+.popup-header {
+    margin-bottom: 0.35rem;
+}
+
+.popup-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.popup-subtitle {
+    font-size: 0.9rem;
+    color: #546e7a;
+}
+
+.popup-row {
+    margin-top: 0.2rem;
+    font-size: 0.9rem;
+}

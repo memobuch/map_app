@@ -1,0 +1,197 @@
+{
+  "type": "FeatureCollection",
+  "vocab": {
+    "event_types": {
+      "voluntary_residence": "Letzte Freiwillige Wohnadresse",
+      "forced_residence": "Erzwungene Wohnadresse",
+      "imprisonment": "Haft",
+      "flight": "Flucht",
+      "death": "Tod"
+    },
+    "victim_category_types": {
+      "widerstand;politisch": "Widerstand, politisch",
+      "widerstand;religiös": "Widerstand, religios",
+      "widerstand;individuell": "Widerstand, individuell",
+      "widerstand;deserteure": "Widerstand, Deserteure",
+      "zeugenjehovas": "Zeugen Jehovas",
+      "jüdischeopfer;jüdisch": "Jüdische Opfer",
+      "jüdischeopfer;als Jude verfolgt": "Jüdische Opfer, als Jude verfolgt",
+      "roma": "Roma",
+      "euthanasieopfer": "Euthanasie Opfer",
+      "homosexuelleopfer": "Homosexuelle Opfer",
+      "opfernsjustiz": "Opfer der NS-Justiz",
+      "asoziale": "Asoziale",
+      "spanienkämpfer": "SpanienkämpferInnen",
+      "zwangsarbeiter": "ZwangsarbeiterInnen",
+      "alliierte": "Alliierte Soldaten",
+      "zivileopfer": "Zivile Opfer"
+    }
+  },
+  "metadata": {
+    "person_id": "memo.person.2",
+    "person_name": "Ernst Altmann",
+    "birth_date": "22.11.1910",
+    "death_date": "22.12.1938",
+    "is_youth": false,
+    "gams_link": "https://gams.uni-graz.at/o:memo.person.2",
+    "feature_count": 6
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.43133551,
+          47.07102645
+        ]
+      },
+      "properties": {
+        "person_id": "memo.person.2",
+        "person_name": "Ernst Altmann",
+        "tags": [
+          "voluntary_residence",
+          "jüdischeopfer;jüdisch"
+        ],
+        "place_name": "Annenstraße 9, 8020 Graz",
+        "date": null,
+        "birth_date": "22.11.1910",
+        "death_date": "22.12.1938",
+        "gender": "male",
+        "is_youth": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.043123,
+          32.123332
+        ]
+      },
+      "properties": {
+        "person_id": "memo.person.2",
+        "person_name": "Ernst Altmann",
+        "tags": [
+          "imprisonment",
+          "jüdischeopfer;jüdisch"
+        ],
+        "place_name": "Graz, Österreich",
+        "date": "1932",
+        "birth_date": "22.11.1910",
+        "death_date": "22.12.1938",
+        "gender": "male",
+        "is_youth": false,
+        "event_id": "memo.person.2_event_haft_0",
+        "event_title": "Haft in Frankreich",
+        "event_description": "Wurde gefangen genommen..."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          32.123321,
+          32.1233221
+        ]
+      },
+      "properties": {
+        "person_id": "memo.person.2",
+        "person_name": "Ernst Altmann",
+        "tags": [
+          "imprisonment",
+          "jüdischeopfer;jüdisch"
+        ],
+        "place_name": "Ottawa, Kanada",
+        "date": "1944",
+        "birth_date": "22.11.1910",
+        "death_date": "22.12.1938",
+        "gender": "male",
+        "is_youth": false,
+        "event_id": "memo.person.2_event_haft_1",
+        "event_title": "Haft in Bruck an der Mur",
+        "event_description": "Im Gefängnis von ..."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.043123,
+          32.123332
+        ]
+      },
+      "properties": {
+        "person_id": "memo.person.2",
+        "person_name": "Ernst Altmann",
+        "tags": [
+          "flight",
+          "jüdischeopfer;jüdisch"
+        ],
+        "place_name": "Graz, Österreich",
+        "date": "1932",
+        "birth_date": "22.11.1910",
+        "death_date": "22.12.1938",
+        "gender": "male",
+        "is_youth": false,
+        "event_id": "memo.person.2_event_flucht_0",
+        "event_title": "Flucht nach Frankreich",
+        "event_description": "Ist geflohen von X nach Y"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          32.123321,
+          32.1233221
+        ]
+      },
+      "properties": {
+        "person_id": "memo.person.2",
+        "person_name": "Ernst Altmann",
+        "tags": [
+          "flight",
+          "jüdischeopfer;jüdisch"
+        ],
+        "place_name": "Ottawa, Kanada",
+        "date": "1944",
+        "birth_date": "22.11.1910",
+        "death_date": "22.12.1938",
+        "gender": "male",
+        "is_youth": false,
+        "event_id": "memo.person.2_event_flucht_1",
+        "event_title": "Flucht von Bruck an der Mur",
+        "event_description": "Ist geflohen von X nach B"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.46869264,
+          48.26883841
+        ]
+      },
+      "properties": {
+        "person_id": "memo.person.2",
+        "person_name": "Ernst Altmann",
+        "tags": [
+          "death",
+          "jüdischeopfer;jüdisch"
+        ],
+        "place_name": "KZ Dachau",
+        "date": "22.12.1938",
+        "birth_date": "22.11.1910",
+        "death_date": "22.12.1938",
+        "gender": "male",
+        "is_youth": false
+      }
+    }
+  ]
+}
