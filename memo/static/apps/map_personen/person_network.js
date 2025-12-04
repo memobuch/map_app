@@ -119,9 +119,9 @@
         const latlngs = points.map(point => point.coords);
         state.connections = L.polyline(latlngs, {
             color: '#263238',
-            weight: 5,
+            weight: 2,          
             opacity: 0.9,
-            lineCap: 'round',
+            lineCap: 'butt',    
             lineJoin: 'round',
             className: 'route-line'
         }).addTo(state.map);
@@ -329,7 +329,7 @@
         const color = CONFIG.colors[eventType] || '#546E7A';
 
         return L.divIcon({
-            className: `network-marker ${isStart ? 'network-marker--start' : ''}`,
+            className: `leaflet-div-icon network-marker ${isStart ? 'network-marker--start' : ''}`,
             html: `
                 <div class="network-marker__circle" style="--marker-color:${color}">
                     <span class="network-marker__label">${idx + 1}</span>

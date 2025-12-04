@@ -199,12 +199,19 @@
 }
 
 .network-marker {
-    position: relative;
+    /* position: relative; */ /* entfernen, sonst verschiebt Leaflet-Positionierung */
     width: 24px;
     height: 24px;
 }
 
+/* Sicherheitsnetz: erzwingt absolute Position für Leaflet-Icons */
+.leaflet-marker-icon.network-marker {
+    position: absolute;
+}
+
+/* für Skalierung auf Mittelpunkt */
 .network-marker__circle {
+    transform-origin: center;
     width: 100%;
     height: 100%;
     box-sizing: border-box;
@@ -233,7 +240,14 @@
 }
 
 .leaflet-pane svg .route-line {
+    stroke-width: 2px;
     filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.2));
+}
+
+.leaflet-div-icon.network-marker {
+    background: transparent; /* kein weißes Quadrat */
+    border: 0;
+    box-shadow: none;
 }
 
 @media (max-width: 900px) {
