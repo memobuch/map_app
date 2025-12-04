@@ -90,15 +90,6 @@
     }
 
     function addMarkers(points) {
-        state.markers = points.map(point => {
-            const isVoluntaryResidence = Array.isArray(point.properties.tags)
-                && point.properties.tags.includes('voluntary_residence');
-
-            const marker = L.circleMarker(point.coords, {
-                radius: isVoluntaryResidence ? 14 : 10,
-                weight: isVoluntaryResidence ? 3 : 2,
-                color: '#FFFFFF',
-                className: isVoluntaryResidence ? 'voluntary-marker' : '',
         state.markers = points.map((point, idx) => {
             const isStart = idx === 0;
             const marker = L.circleMarker(point.coords, {
@@ -110,10 +101,10 @@
                 fillOpacity: 0.9
             });
 
-            marker.bindPopup(createPopupContent(point));
+            marker.bindPopup(createPopupContent({ ...point, index: idx }));
             marker.addTo(state.map);
 
-            addStationLabel(marker, point.index + 1, isStart);
+            addStationLabel(marker, idx + 1, isStart);
 
             return marker;
         });
