@@ -93,9 +93,9 @@
         // Initialize marker cluster
         state.markerCluster = L.markerClusterGroup({
             maxClusterRadius: 80,
-            spiderfyOnMaxZoom: true,
+            spiderfyOnMaxZoom: false,
             showCoverageOnHover: false,
-            zoomToBoundsOnClick: true,
+            zoomToBoundsOnClick: false,
             iconCreateFunction: createClusterIcon
         });
 
