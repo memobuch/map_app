@@ -118,7 +118,7 @@
 }
 
 .journey-item {
-    display: grid;
+    display: none;
     grid-template-columns: auto 1fr;
     gap: 0.65rem;
     padding: 0.75rem;
@@ -135,6 +135,7 @@
 }
 
 .journey-item.is-active {
+    display: grid;
     border-color: #1a1a1a;
     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);

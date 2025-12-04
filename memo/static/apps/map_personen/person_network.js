@@ -429,8 +429,11 @@
         }
 
         document.querySelectorAll('.journey-item').forEach((item, idx) => {
-            item.classList.toggle('is-active', idx === index);
-            if (idx === index) {
+            const isActive = idx === index;
+            item.classList.toggle('is-active', isActive);
+            item.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+            item.tabIndex = isActive ? 0 : -1;
+            if (isActive) {
                 item.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
             }
         });
