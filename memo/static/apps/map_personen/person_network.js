@@ -104,12 +104,11 @@
                     className: `network-marker ${isStart ? 'network-marker--start' : ''}`,
                     html: `
                         <div class="network-marker__halo"></div>
-                        <div class="network-marker__dot" style="--marker-color:${eventColor}"></div>
-                        <div class="network-marker__label">${idx + 1}</div>
+                        <div class="network-marker__core" style="--marker-color:${eventColor}">${idx + 1}</div>
                     `,
-                    iconSize: [38, 44],
-                    iconAnchor: [19, 19],
-                    popupAnchor: [0, -14]
+                    iconSize: [42, 42],
+                    iconAnchor: [21, 21],
+                    popupAnchor: [0, -18]
                 })
             });
 
