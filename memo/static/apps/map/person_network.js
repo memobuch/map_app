@@ -217,7 +217,6 @@
                 <div class="popup-row"><strong>Datum:</strong> ${props.date || 'Ohne Datumsangabe'}</div>
                 ${props.event_title ? `<div class="popup-row"><strong>Ereignis:</strong> ${props.event_title}</div>` : ''}
                 ${props.event_description ? `<div class="popup-row">${props.event_description}</div>` : ''}
-                ${eventTypeLabel ? `<div class="popup-row"><strong>Typ:</strong> ${eventTypeLabel}</div>` : ''}
                 ${victimLabels ? `<div class="popup-row"><strong>Kategorie:</strong> ${victimLabels}</div>` : ''}
             </div>
         `;
