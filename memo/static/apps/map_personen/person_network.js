@@ -91,7 +91,6 @@
         addConnections(orderedPoints);
         fitBounds(orderedPoints);
         addNavigationControl();
-        setActiveStation(0);
     }
 
     function addMarkers(points) {
