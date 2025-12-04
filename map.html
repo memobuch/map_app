@@ -26,29 +26,6 @@
             </div>
         </header>
 
-        <!-- View Mode Selector -->
-        <div class="view-mode-panel">
-            <div class="view-mode-content">
-                <div class="view-mode-title">Ansichtsmodus</div>
-                <div class="view-mode-buttons">
-                    <button class="view-mode-btn active" data-mode="aggregate">
-                        <span class="btn-icon">◉</span>
-                        <div class="btn-content">
-                            <div class="btn-label">Ortkonzentration</div>
-                            <div class="btn-description">Größe zeigt Anzahl der Ereignisse</div>
-                        </div>
-                    </button>
-                    <button class="view-mode-btn" data-mode="points">
-                        <span class="btn-icon">⬤</span>
-                        <div class="btn-content">
-                            <div class="btn-label">Einzelne Ereignisse</div>
-                            <div class="btn-description">Jedes Ereignis als separater Punkt</div>
-                        </div>
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <!-- Filter Controls -->
         <div class="controls-panel">
             <div class="controls-content">
@@ -98,23 +75,23 @@
                 <div class="filter-section">
                     <h3 class="filter-title">Opferkategorien filtern</h3>
                     <div class="filter-grid" id="victim-category-filters">
-                        <!-- Dynamically populated from data -->
+                        <!-- Dynamically populated -->
                     </div>
                 </div>
-                
+
                 <!-- Statistics -->
                 <div class="stats-section">
                     <div class="stat-item">
-                        <span class="stat-label">Personen:</span>
-                        <span class="stat-value" id="total-persons">-</span>
+                        <span class="stat-label">Personen</span>
+                        <span class="stat-value" id="total-persons">0</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Ereignisse:</span>
-                        <span class="stat-value" id="total-events">-</span>
+                        <span class="stat-label">Ereignisse</span>
+                        <span class="stat-value" id="total-events">0</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Sichtbar:</span>
-                        <span class="stat-value" id="visible-events">-</span>
+                        <span class="stat-label">Sichtbar</span>
+                        <span class="stat-value" id="visible-events">0</span>
                     </div>
                 </div>
             </div>
@@ -126,25 +103,17 @@
         <!-- Info Panel -->
         <div class="info-panel">
             <div class="info-content">
-                <h3>Über diese Karte</h3>
+                <h3>Über das Projekt</h3>
                 <p>
-                    Diese interaktive Karte visualisiert die Schicksale von 
-                    <strong id="person-count-text">691 Personen</strong>, die während der 
-                    nationalsozialistischen Herrschaft in Graz verfolgt wurden.
+                    Diese Karte visualisiert die Ereignisse von 691 Opfern des Nationalsozialismus in Graz 
+                    zwischen 1938 und 1945. Jeder Punkt repräsentiert ein dokumentiertes Ereignis im Leben 
+                    einer verfolgten Person.
                 </p>
-                <p>
-                    <strong>Ortkonzentration-Ansicht:</strong> Zeigt, wo sich Ereignisse konzentrierten. 
-                    Größere Kreise bedeuten mehr Ereignisse am selben Ort.
-                </p>
-                <p>
-                    <strong>Einzelereignis-Ansicht:</strong> Zeigt jedes Ereignis als separaten Punkt. 
-                    Besonders hilfreich für detaillierte Recherchen.
-                </p>
-                <p class="info-link">
-                    <a href="https://gams.uni-graz.at/o:memo" target="_blank" rel="noopener">
-                        Mehr Informationen zum MEMO-Projekt →
+                <div class="info-link">
+                    <a href="https://gams.uni-graz.at/context:memo" target="_blank" rel="noopener">
+                        Weitere Informationen im GAMS
                     </a>
-                </p>
+                </div>
             </div>
         </div>
     </div>
