@@ -28,10 +28,7 @@
         map: null,
         geojsonData: null,
         markers: [],
-        connections: null,
-        orderedPoints: [],
-        currentIndex: 0,
-        navControl: null
+        connections: null
     };
 
     function init() {
@@ -84,64 +81,37 @@
                 properties: feature.properties || {}
             }));
 
-        const sortedPoints = [...points]
-            .sort((a, b) => {
-                const aIsVoluntary = isVoluntaryResidence(a.properties.tags);
-                const bIsVoluntary = isVoluntaryResidence(b.properties.tags);
-
-                if (aIsVoluntary && !bIsVoluntary) return -1;
-                if (!aIsVoluntary && bIsVoluntary) return 1;
-
-                const dateDiff = dateScore(a.properties.date) - dateScore(b.properties.date);
-                if (dateDiff !== 0) {
-                    return dateDiff;
-                }
-
-                return a.index - b.index;
-            });
-
-        sortedPoints.forEach((point, idx) => {
-            point.sequence = idx + 1;
-            point.isStart = idx === 0;
-        });
-
-        state.orderedPoints = sortedPoints;
-        state.currentIndex = 0;
+        const sortedPoints = [...points].sort((a, b) => dateScore(a.properties.date) - dateScore(b.properties.date));
 
         addMarkers(sortedPoints);
         addConnections(sortedPoints);
-        addNavigation();
         fitBounds(sortedPoints);
     }
 
     function addMarkers(points) {
         state.markers = points.map(point => {
             const marker = L.circleMarker(point.coords, {
-                radius: point.isStart ? 13 : 10,
-                weight: point.isStart ? 4 : 2,
-                color: point.isStart ? '#FFB300' : '#FFFFFF',
-                className: point.isStart ? 'start-marker' : '',
+                radius: 10,
+                weight: 2,
+                color: '#FFFFFF',
                 fillColor: getEventColor(point.properties.tags),
-                fillOpacity: point.isStart ? 1 : 0.9
+                fillOpacity: 0.9
             });
 
             marker.bindPopup(createPopupContent(point));
             marker.addTo(state.map);
 
-            addStationLabel(marker, point.sequence, point.isStart);
-            marker.on('click', () => setCurrentIndex(point.sequence - 1));
+            addStationLabel(marker, point.index + 1);
 
             return marker;
         });
-
-        openPopupAtIndex(state.currentIndex);
     }
 
-    function addStationLabel(marker, number, isStart) {
+    function addStationLabel(marker, number) {
         const label = L.divIcon({
-            className: `station-label${isStart ? ' station-label--start' : ''}`,
+            className: 'station-label',
             html: `<span>${number}</span>`,
-            iconSize: [22, 22]
+            iconSize: [20, 20]
         });
 
         L.marker(marker.getLatLng(), { icon: label, interactive: false }).addTo(state.map);
@@ -175,10 +145,6 @@
         return CONFIG.colors[eventType] || '#546E7A';
     }
 
-    function isVoluntaryResidence(tags = []) {
-        return Array.isArray(tags) && tags.includes('voluntary_residence');
-    }
-
     function createPopupContent(point) {
         const props = point.properties;
         const { eventTypes, victimCategories } = parseTags(props.tags);
@@ -187,11 +153,11 @@
         const victimLabels = victimCategories.map(cat => state.geojsonData.vocab?.victim_category_types?.[cat] || cat).join(', ');
 
         return `
-                <div class="popup-content">
-                    <div class="popup-header">
-                        <div class="popup-title">${props.person_name || 'Unbekannte Person'}</div>
-                        <div class="popup-subtitle">${eventTypeLabel || 'Ohne Typangabe'}</div>
-                    </div>
+            <div class="popup-content">
+                <div class="popup-header">
+                    <div class="popup-title">${props.person_name || 'Unbekannte Person'}</div>
+                    <div class="popup-subtitle">Station ${point.index + 1}</div>
+                </div>
                 <div class="popup-row"><strong>Ort:</strong> ${props.place_name || 'Unbekannt'}</div>
                 <div class="popup-row"><strong>Datum:</strong> ${props.date || 'Ohne Datumsangabe'}</div>
                 ${props.event_title ? `<div class="popup-row"><strong>Ereignis:</strong> ${props.event_title}</div>` : ''}
@@ -271,80 +237,6 @@
             flight: 'Flucht',
             death: 'Tod'
         }[key] || key;
-    }
-
-    function addNavigation() {
-        if (state.navControl) {
-            state.map.removeControl(state.navControl);
-        }
-
-        const NavControl = L.Control.extend({
-            options: { position: 'bottomleft' },
-            onAdd: function() {
-                const container = L.DomUtil.create('div', 'nav-control');
-
-                const prevButton = L.DomUtil.create('button', 'nav-button', container);
-                prevButton.textContent = '← Zurück';
-                prevButton.addEventListener('click', () => stepNavigation(-1));
-
-                const status = L.DomUtil.create('div', 'nav-status', container);
-                status.id = 'nav-status';
-
-                const nextButton = L.DomUtil.create('button', 'nav-button', container);
-                nextButton.textContent = 'Weiter →';
-                nextButton.addEventListener('click', () => stepNavigation(1));
-
-                updateNavStatus(status, prevButton, nextButton);
-
-                L.DomEvent.disableClickPropagation(container);
-                return container;
-            }
-        });
-
-        state.navControl = new NavControl();
-        state.navControl.addTo(state.map);
-    }
-
-    function stepNavigation(direction) {
-        const nextIndex = state.currentIndex + direction;
-        if (nextIndex < 0 || nextIndex >= state.orderedPoints.length) return;
-
-        setCurrentIndex(nextIndex);
-    }
-
-    function setCurrentIndex(idx) {
-        if (idx < 0 || idx >= state.orderedPoints.length) return;
-        state.currentIndex = idx;
-        openPopupAtIndex(idx);
-        refreshNavStatus();
-    }
-
-    function openPopupAtIndex(idx) {
-        const marker = state.markers[idx];
-        if (!marker) return;
-
-        marker.openPopup();
-        state.map.panTo(marker.getLatLng(), { animate: true });
-    }
-
-    function refreshNavStatus() {
-        const status = document.getElementById('nav-status');
-        const buttons = document.querySelectorAll('.nav-button');
-        if (!status || !buttons.length) return;
-
-        const total = state.orderedPoints.length;
-        status.textContent = `Station ${state.currentIndex + 1} von ${total}`;
-
-        const [prevButton, nextButton] = buttons;
-        prevButton.disabled = state.currentIndex === 0;
-        nextButton.disabled = state.currentIndex >= total - 1;
-    }
-
-    function updateNavStatus(statusEl, prevButton, nextButton) {
-        const total = state.orderedPoints.length;
-        statusEl.textContent = `Station ${state.currentIndex + 1} von ${total}`;
-        prevButton.disabled = state.currentIndex === 0;
-        nextButton.disabled = state.currentIndex >= total - 1;
     }
 
     document.addEventListener('DOMContentLoaded', init);
