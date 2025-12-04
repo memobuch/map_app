@@ -30,7 +30,8 @@
         markers: [],
         connections: null,
         orderedPoints: [],
-        currentIndex: 0
+        currentIndex: -1, 
+        clusterGroup: null
     };
 
     function init() {
@@ -52,6 +53,17 @@
             subdomains: 'abcd',
             maxZoom: CONFIG.maxZoom
         }).addTo(state.map);
+
+        // Cluster + Spiderfy aktivieren (für nahe/gleiche Punkte)
+        state.clusterGroup = L.markerClusterGroup({
+            maxClusterRadius: 45,            // Toleranz für Nähe (anpassbar)
+            disableClusteringAtZoom: 16,     // ab Zoom 16 keine Cluster mehr
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: false,      // lieber spiderfy statt reinzoomen
+            spiderfyOnEveryZoom: true,
+            spiderfyDistanceMultiplier: 1.25
+        });
+        state.map.addLayer(state.clusterGroup);
 
         addLegend();
     }
@@ -90,9 +102,8 @@
         addMarkers(orderedPoints);
         addConnections(orderedPoints);
         fitBounds(orderedPoints);
-        addNavigationControl();
         renderJourneyPanel(orderedPoints);
-        setActiveStation(0);
+
     }
 
     function addMarkers(points) {
@@ -105,7 +116,8 @@
 
             marker.bindPopup(createPopupContent({ ...point, index: idx }));
             marker.on('click', () => setActiveStation(idx));
-            marker.addTo(state.map);
+
+            state.clusterGroup.addLayer(marker);
 
             return marker;
         });
@@ -386,7 +398,7 @@
                 </div>
                 <div class="journey-controls">
                     <button class="journey-btn" type="button" data-step="-1" aria-label="Vorherige Station">Zurück</button>
-                    <span class="journey-progress"><span id="journey-current">1</span> / ${points.length}</span>
+                    <span class="journey-progress"><span id="journey-current">–</span> / ${points.length}</span>
                     <button class="journey-btn" type="button" data-step="1" aria-label="Nächste Station">Weiter</button>
                 </div>
             </div>
