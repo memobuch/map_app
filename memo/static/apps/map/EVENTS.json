@@ -4,23 +4,28 @@
     "event_types": {
       "voluntary_residence": {
         "label": "Letzte Freiwillige Wohnadresse",
-        "color": "#b3b3b3"
+        "color": "#b3b3b3",
+        "shape": "circle"
       },
       "forced_residence": {
         "label": "Erzwungene Wohnadresse",
-        "color": "#666666"
+        "color": "#666666",
+        "shape": "square"
       },
       "imprisonment": {
         "label": "Haft",
-        "color": "#404040"
+        "color": "#404040",
+        "shape": "diamond"
       },
       "flight": {
         "label": "Flucht",
-        "color": "#8c8c8c"
+        "color": "#8c8c8c",
+        "shape": "triangle"
       },
       "death": {
         "label": "Tod",
-        "color": "#1a1a1a"
+        "color": "#1a1a1a",
+        "shape": "cross"
       }
     },
     "victim_category_types": {
@@ -94,7 +99,7 @@
     "project": "MEMO - Digitales Memobuch",
     "total_persons": 680,
     "total_location_events": 347,
-    "generated": "2025-12-04T13:37:01.108214"
+    "generated": "2025-12-04T14:29:23.630069"
   },
   "features": [
     {

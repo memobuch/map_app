@@ -1,6 +1,6 @@
 // ===================================
 // MEMO Enhanced Map - JavaScript
-// Version 5.1.3 - Fixed Cluster Popup Address Logic
+// Version 5.2.0 - Shape from Vocab + All Victim Categories in Filters
 // ===================================
 
 (function() {
@@ -13,16 +13,6 @@
         mapZoom: 13,
         minZoom: 1,
         maxZoom: 28
-    };
-
-    // Event type shape definitions (shapes stay in code, colors come from vocab)
-    const EVENT_TYPE_SHAPES = {
-        voluntary_residence: 'circle',
-        forced_residence: 'square',
-        imprisonment: 'diamond',
-        flight: 'triangle',
-        death: 'cross',
-        unknown: 'hexagon'
     };
 
     // ===== State =====
@@ -67,6 +57,11 @@
         return state.vocab.event_types[type]?.color || '#999999';
     }
 
+    function getEventTypeShape(type) {
+        if (type === 'unknown') return 'hexagon';
+        return state.vocab.event_types[type]?.shape || 'circle';
+    }
+
     function getVictimCategoryLabel(key) {
         if (key === 'unknown') return 'Unbekannt';
         return state.vocab.victim_category_types[key]?.label || key;
@@ -95,7 +90,7 @@
 
     // ===== Initialization =====
     function init() {
-        console.log('Initializing MEMO Map (v5.1.2 - Improved Text Spacing)...');
+        console.log('Initializing MEMO Map (v5.2.0 - Shape from Vocab + All Categories)...');
         initializeMap();
         loadGeoJSONData();
     }
@@ -419,7 +414,7 @@
 
     // ===== Create Icons =====
     function createPointIcon(eventType, color) {
-        const shape = EVENT_TYPE_SHAPES[eventType] || 'circle';
+        const shape = getEventTypeShape(eventType);
         let svgIcon = '';
         
         // Different SVG shapes based on event type
@@ -818,7 +813,7 @@
         // Create filters from vocab
         state.eventTypeKeys.forEach(key => {
             const label = getEventTypeLabel(key);
-            const shape = EVENT_TYPE_SHAPES[key] || 'circle';
+            const shape = getEventTypeShape(key);
             const sampleColor = '#666';
             
             const labelEl = document.createElement('label');
@@ -872,8 +867,9 @@
         // Clear existing
         container.innerHTML = '';
         
-        // Sort categories alphabetically by label
-        const sortedCategories = Array.from(state.allVictimCategories).sort((a, b) => {
+        // Show ALL categories from vocab (not just those in data)
+        // Sort alphabetically by label
+        const sortedCategories = Array.from(state.victimCategoryKeys).sort((a, b) => {
             return getVictimCategoryLabel(a).localeCompare(getVictimCategoryLabel(b), 'de');
         });
         
@@ -943,7 +939,7 @@
             // Add all event types from vocab
             state.eventTypeKeys.forEach(key => {
                 const label = getEventTypeLabel(key);
-                const shape = EVENT_TYPE_SHAPES[key] || 'circle';
+                const shape = getEventTypeShape(key);
                 const sampleColor = '#666'; // Neutral color for shape demo
                 
                 div.innerHTML += `
@@ -965,8 +961,8 @@
             // Victim categories legend (colors)
             div.innerHTML += '<div class="legend-title" style="margin-top: 1rem;">Opferkategorien (Farben)</div>';
             
-            // Show only categories that exist in the data
-            Array.from(state.allVictimCategories).sort((a, b) => {
+            // Show ALL categories from vocab (sorted alphabetically)
+            Array.from(state.victimCategoryKeys).sort((a, b) => {
                 return getVictimCategoryLabel(a).localeCompare(getVictimCategoryLabel(b), 'de');
             }).forEach(key => {
                 const label = getVictimCategoryLabel(key);
