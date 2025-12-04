@@ -28,7 +28,9 @@
         map: null,
         geojsonData: null,
         markers: [],
-        connections: null
+        connections: null,
+        orderedPoints: [],
+        currentIndex: 0
     };
 
     function init() {
@@ -82,51 +84,34 @@
                 properties: feature.properties || {}
             }));
 
-        const sortedPoints = [...points].sort((a, b) => dateScore(a.properties.date) - dateScore(b.properties.date));
+        const orderedPoints = orderPoints(points);
+        state.orderedPoints = orderedPoints;
 
-        addMarkers(sortedPoints);
-        addConnections(sortedPoints);
-        fitBounds(sortedPoints);
+        addMarkers(orderedPoints);
+        addConnections(orderedPoints);
+        fitBounds(orderedPoints);
+        addNavigationControl();
+        setActiveStation(0);
     }
 
     function addMarkers(points) {
-        state.markers = points.map(point => {
-            const isVoluntaryResidence = Array.isArray(point.properties.tags)
-                && point.properties.tags.includes('voluntary_residence');
-
-            const marker = L.circleMarker(point.coords, {
-                radius: isVoluntaryResidence ? 14 : 10,
-                weight: isVoluntaryResidence ? 3 : 2,
-                color: '#FFFFFF',
-                className: isVoluntaryResidence ? 'voluntary-marker' : '',
         state.markers = points.map((point, idx) => {
             const isStart = idx === 0;
             const marker = L.circleMarker(point.coords, {
-                radius: isStart ? 12 : 10,
-                weight: isStart ? 3 : 2,
+                radius: isStart ? 14 : 10,
+                weight: isStart ? 4 : 2,
                 color: '#FFFFFF',
                 className: isStart ? 'start-marker' : '',
                 fillColor: getEventColor(point.properties.tags),
                 fillOpacity: 0.9
             });
 
-            marker.bindPopup(createPopupContent(point));
+            marker.bindPopup(createPopupContent({ ...point, index: idx }));
+            marker.on('click', () => setActiveStation(idx));
             marker.addTo(state.map);
-
-            addStationLabel(marker, point.index + 1, isStart);
 
             return marker;
         });
-    }
-
-    function addStationLabel(marker, number, isStart = false) {
-        const label = L.divIcon({
-            className: `station-label${isStart ? ' station-label--start' : ''}`,
-            html: `<span>${number}</span>`,
-            iconSize: [20, 20]
-        });
-
-        L.marker(marker.getLatLng(), { icon: label, interactive: false }).addTo(state.map);
     }
 
     function addConnections(points) {
@@ -152,6 +137,50 @@
         state.map.fitBounds(bounds, { padding: [30, 30] });
     }
 
+    function setActiveStation(index) {
+        if (!state.markers.length || !state.markers[index]) return;
+
+        state.currentIndex = index;
+        const marker = state.markers[index];
+        marker.openPopup();
+        state.map.panTo(marker.getLatLng(), { animate: true });
+    }
+
+    function addNavigationControl() {
+        if (state.markers.length < 2) return;
+
+        const control = L.control({ position: 'bottomleft' });
+
+        control.onAdd = () => {
+            const container = L.DomUtil.create('div', 'station-nav');
+            container.innerHTML = `
+                <button type="button" class="station-nav__btn station-nav__btn--prev" aria-label="Vorherige Station">⟨</button>
+                <button type="button" class="station-nav__btn station-nav__btn--next" aria-label="Nächste Station">⟩</button>
+            `;
+
+            L.DomEvent.on(container.querySelector('.station-nav__btn--prev'), 'click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                goToStation(-1);
+            });
+
+            L.DomEvent.on(container.querySelector('.station-nav__btn--next'), 'click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                goToStation(1);
+            });
+
+            return container;
+        };
+
+        control.addTo(state.map);
+    }
+
+    function goToStation(step) {
+        if (!state.markers.length) return;
+        const total = state.markers.length;
+        const nextIndex = (state.currentIndex + step + total) % total;
+        setActiveStation(nextIndex);
+    }
+
     function getEventColor(tags = []) {
         const eventType = tags.find(tag => EVENT_TYPES.has(tag));
         return CONFIG.colors[eventType] || '#546E7A';
@@ -175,11 +204,15 @@
         const eventTypeLabel = eventTypes.map(type => state.geojsonData.vocab?.event_types?.[type] || type).join(', ');
         const victimLabels = victimCategories.map(cat => state.geojsonData.vocab?.victim_category_types?.[cat] || cat).join(', ');
 
+        const subtitle = props.tags?.includes('voluntary_residence')
+            ? 'Freiwillige Wohnadresse'
+            : (eventTypeLabel || 'Ereignis');
+
         return `
             <div class="popup-content">
                 <div class="popup-header">
                     <div class="popup-title">${props.person_name || 'Unbekannte Person'}</div>
-                    <div class="popup-subtitle">Station ${point.index + 1}</div>
+                    <div class="popup-subtitle">${subtitle}</div>
                 </div>
                 <div class="popup-row"><strong>Ort:</strong> ${props.place_name || 'Unbekannt'}</div>
                 <div class="popup-row"><strong>Datum:</strong> ${props.date || 'Ohne Datumsangabe'}</div>
@@ -230,6 +263,18 @@
         }
 
         return Number.MAX_SAFE_INTEGER;
+    }
+
+    function orderPoints(points) {
+        const voluntary = points
+            .filter(point => (point.properties.tags || []).includes('voluntary_residence'))
+            .sort((a, b) => dateScore(a.properties.date) - dateScore(b.properties.date));
+
+        const others = points
+            .filter(point => !(point.properties.tags || []).includes('voluntary_residence'))
+            .sort((a, b) => dateScore(a.properties.date) - dateScore(b.properties.date));
+
+        return [...voluntary, ...others];
     }
 
     function addLegend() {
