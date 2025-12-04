@@ -98,18 +98,17 @@
         state.markers = points.map((point, idx) => {
             const isStart = idx === 0;
             const marker = L.circleMarker(point.coords, {
-                radius: isStart ? 14 : 10,
+                radius: isStart ? 13 : 10,
                 weight: isStart ? 4 : 2,
-                color: '#FFFFFF',
+                color: '#ffffff',
                 className: isStart ? 'start-marker' : '',
                 fillColor: getEventColor(point.properties.tags),
-                fillOpacity: 0.9
+                fillOpacity: 0.95
             });
 
             marker.bindPopup(createPopupContent({ ...point, index: idx }));
+            marker.on('click', () => setActiveStation(idx));
             marker.addTo(state.map);
-
-            addStationLabel(marker, idx + 1, isStart);
 
             return marker;
         });
@@ -122,10 +121,9 @@
 
         const latlngs = points.map(point => point.coords);
         state.connections = L.polyline(latlngs, {
-            color: '#546E7A',
-            weight: 3,
-            opacity: 0.6,
-            dashArray: '6 4'
+            color: '#37474F',
+            weight: 4,
+            opacity: 0.75
         }).addTo(state.map);
     }
 

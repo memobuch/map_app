@@ -1,13 +1,7 @@
 /* ===== Person Network Styles ===== */
 .start-marker {
-    filter: drop-shadow(0 0 10px rgba(255, 179, 0, 0.85));
-    animation: startPulse 1.8s ease-in-out infinite;
-}
-
-@keyframes startPulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.12); opacity: 0.85; }
-    100% { transform: scale(1); opacity: 1; }
+    filter: drop-shadow(0 0 8px rgba(33, 150, 243, 0.45));
+    opacity: 1;
 }
 
 .station-nav {
