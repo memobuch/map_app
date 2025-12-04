@@ -199,43 +199,35 @@
 
 .network-marker {
     position: relative;
-    width: 40px;
-    height: 40px;
+    width: 24px;
+    height: 24px;
 }
 
-.network-marker__halo {
-    position: absolute;
-    inset: 0;
+.network-marker__circle {
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%);
-    transform: scale(1.25);
-}
-
-.network-marker__core {
-    position: absolute;
-    inset: 4px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 50%),
-        linear-gradient(135deg, var(--marker-color, #2196f3) 0%, #0f172a 100%);
+    background: var(--marker-color, #2196f3);
     border: 2px solid #ffffff;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     display: grid;
     place-items: center;
     font-weight: 800;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-    transform: scale(1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    color: #fff;
+    line-height: 1;
 }
 
-.network-marker--start .network-marker__core {
-    transform: scale(1.05);
-    box-shadow: 0 10px 24px rgba(33, 150, 243, 0.5);
+.network-marker__label {
+    font-size: 0.8rem;
 }
 
-.network-marker.is-active .network-marker__core {
-    transform: scale(1.15);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+.network-marker--start .network-marker__circle {
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.network-marker.is-active .network-marker__circle {
+    transform: scale(1.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
 }
 
 .leaflet-pane svg .route-line {

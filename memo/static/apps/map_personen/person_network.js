@@ -98,18 +98,9 @@
     function addMarkers(points) {
         state.markers = points.map((point, idx) => {
             const isStart = idx === 0;
-            const eventColor = getEventColor(point.properties.tags);
+            const eventType = getPrimaryEventType(point.properties.tags);
             const marker = L.marker(point.coords, {
-                icon: L.divIcon({
-                    className: `network-marker ${isStart ? 'network-marker--start' : ''}`,
-                    html: `
-                        <div class="network-marker__halo"></div>
-                        <div class="network-marker__core" style="--marker-color:${eventColor}">${idx + 1}</div>
-                    `,
-                    iconSize: [42, 42],
-                    iconAnchor: [21, 21],
-                    popupAnchor: [0, -18]
-                })
+                icon: createStationIcon(eventType, idx, isStart)
             });
 
             marker.bindPopup(createPopupContent({ ...point, index: idx }));
@@ -192,8 +183,12 @@
     }
 
     function getEventColor(tags = []) {
-        const eventType = tags.find(tag => EVENT_TYPES.has(tag));
+        const eventType = getPrimaryEventType(tags);
         return CONFIG.colors[eventType] || '#546E7A';
+    }
+
+    function getPrimaryEventType(tags = []) {
+        return tags?.find(tag => EVENT_TYPES.has(tag));
     }
 
     function getEventLabel(tags = []) {
@@ -286,7 +281,8 @@
             ...point,
             _sortScore: dateScore(point.properties.date),
             _originalIndex: index,
-            _isDeath: (point.properties.tags || []).includes('death')
+            _isDeath: (point.properties.tags || []).includes('death'),
+            _isVoluntaryResidence: (point.properties.tags || []).includes('voluntary_residence')
         }));
 
         const sortChronologically = (a, b) => {
@@ -304,11 +300,45 @@
             .filter(point => point._isDeath)
             .sort(sortChronologically);
 
-        return [...nonDeathPoints, ...deathPoints].map(point => ({
+        let ordered = [...nonDeathPoints, ...deathPoints];
+
+        const voluntaryCandidates = ordered.filter(point => point._isVoluntaryResidence);
+        if (voluntaryCandidates.length > 0) {
+            const startCandidate = voluntaryCandidates.reduce((latest, current) => {
+                if (!latest) return current;
+                if (current._sortScore !== latest._sortScore) {
+                    return current._sortScore > latest._sortScore ? current : latest;
+                }
+                return current._originalIndex > latest._originalIndex ? current : latest;
+            }, null);
+
+            ordered = [
+                startCandidate,
+                ...ordered.filter(point => point !== startCandidate)
+            ];
+        }
+
+        return ordered.map(point => ({
             index: point.index,
             coords: point.coords,
             properties: point.properties
         }));
+    }
+
+    function createStationIcon(eventType, idx, isStart) {
+        const color = CONFIG.colors[eventType] || '#546E7A';
+
+        return L.divIcon({
+            className: `network-marker ${isStart ? 'network-marker--start' : ''}`,
+            html: `
+                <div class="network-marker__circle" style="--marker-color:${color}">
+                    <span class="network-marker__label">${idx + 1}</span>
+                </div>
+            `,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -10]
+        });
     }
 
     function addLegend() {
