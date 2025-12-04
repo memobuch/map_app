@@ -81,26 +81,7 @@
                 properties: feature.properties || {}
             }));
 
-        const sortedPoints = [...points]
-            .sort((a, b) => {
-                const aIsVoluntary = isVoluntaryResidence(a.properties.tags);
-                const bIsVoluntary = isVoluntaryResidence(b.properties.tags);
-
-                if (aIsVoluntary && !bIsVoluntary) return -1;
-                if (!aIsVoluntary && bIsVoluntary) return 1;
-
-                const dateDiff = dateScore(a.properties.date) - dateScore(b.properties.date);
-                if (dateDiff !== 0) {
-                    return dateDiff;
-                }
-
-                return a.index - b.index;
-            });
-
-        sortedPoints.forEach((point, idx) => {
-            point.sequence = idx + 1;
-            point.isStart = idx === 0;
-        });
+        const sortedPoints = [...points].sort((a, b) => dateScore(a.properties.date) - dateScore(b.properties.date));
 
         addMarkers(sortedPoints);
         addConnections(sortedPoints);
@@ -110,27 +91,27 @@
     function addMarkers(points) {
         state.markers = points.map(point => {
             const marker = L.circleMarker(point.coords, {
-                radius: point.isStart ? 11 : 10,
-                weight: point.isStart ? 3 : 2,
-                color: point.isStart ? '#FFCA28' : '#FFFFFF',
+                radius: 10,
+                weight: 2,
+                color: '#FFFFFF',
                 fillColor: getEventColor(point.properties.tags),
-                fillOpacity: point.isStart ? 1 : 0.9
+                fillOpacity: 0.9
             });
 
             marker.bindPopup(createPopupContent(point));
             marker.addTo(state.map);
 
-            addStationLabel(marker, point.sequence, point.isStart);
+            addStationLabel(marker, point.index + 1);
 
             return marker;
         });
     }
 
-    function addStationLabel(marker, number, isStart) {
+    function addStationLabel(marker, number) {
         const label = L.divIcon({
-            className: `station-label${isStart ? ' station-label--start' : ''}`,
+            className: 'station-label',
             html: `<span>${number}</span>`,
-            iconSize: [22, 22]
+            iconSize: [20, 20]
         });
 
         L.marker(marker.getLatLng(), { icon: label, interactive: false }).addTo(state.map);
@@ -164,10 +145,6 @@
         return CONFIG.colors[eventType] || '#546E7A';
     }
 
-    function isVoluntaryResidence(tags = []) {
-        return Array.isArray(tags) && tags.includes('voluntary_residence');
-    }
-
     function createPopupContent(point) {
         const props = point.properties;
         const { eventTypes, victimCategories } = parseTags(props.tags);
@@ -176,11 +153,11 @@
         const victimLabels = victimCategories.map(cat => state.geojsonData.vocab?.victim_category_types?.[cat] || cat).join(', ');
 
         return `
-                <div class="popup-content">
-                    <div class="popup-header">
-                        <div class="popup-title">${props.person_name || 'Unbekannte Person'}</div>
-                        <div class="popup-subtitle">${eventTypeLabel || 'Ohne Typangabe'}</div>
-                    </div>
+            <div class="popup-content">
+                <div class="popup-header">
+                    <div class="popup-title">${props.person_name || 'Unbekannte Person'}</div>
+                    <div class="popup-subtitle">Station ${point.index + 1}</div>
+                </div>
                 <div class="popup-row"><strong>Ort:</strong> ${props.place_name || 'Unbekannt'}</div>
                 <div class="popup-row"><strong>Datum:</strong> ${props.date || 'Ohne Datumsangabe'}</div>
                 ${props.event_title ? `<div class="popup-row"><strong>Ereignis:</strong> ${props.event_title}</div>` : ''}
