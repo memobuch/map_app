@@ -99,6 +99,13 @@
                 weight: isVoluntaryResidence ? 3 : 2,
                 color: '#FFFFFF',
                 className: isVoluntaryResidence ? 'voluntary-marker' : '',
+        state.markers = points.map((point, idx) => {
+            const isStart = idx === 0;
+            const marker = L.circleMarker(point.coords, {
+                radius: isStart ? 12 : 10,
+                weight: isStart ? 3 : 2,
+                color: '#FFFFFF',
+                className: isStart ? 'start-marker' : '',
                 fillColor: getEventColor(point.properties.tags),
                 fillOpacity: 0.9
             });
@@ -106,15 +113,15 @@
             marker.bindPopup(createPopupContent(point));
             marker.addTo(state.map);
 
-            addStationLabel(marker, point.index + 1);
+            addStationLabel(marker, point.index + 1, isStart);
 
             return marker;
         });
     }
 
-    function addStationLabel(marker, number) {
+    function addStationLabel(marker, number, isStart = false) {
         const label = L.divIcon({
-            className: 'station-label',
+            className: `station-label${isStart ? ' station-label--start' : ''}`,
             html: `<span>${number}</span>`,
             iconSize: [20, 20]
         });

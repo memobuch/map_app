@@ -751,6 +751,22 @@ a:focus {
 
 .voluntary-marker {
     filter: drop-shadow(0 0 8px rgba(33, 150, 243, 0.35));
+.station-label--start {
+    background: linear-gradient(135deg, #FFE082 0%, #FFB300 100%);
+    color: #000;
+    border-color: #000;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 6px 14px rgba(0, 0, 0, 0.45);
+}
+
+.start-marker {
+    filter: drop-shadow(0 0 8px rgba(255, 179, 0, 0.7));
+    animation: startPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes startPulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .station-label span {
