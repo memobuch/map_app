@@ -231,7 +231,7 @@
 }
 
 .leaflet-pane svg .route-line {
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.2));
 }
 
 @media (max-width: 900px) {

@@ -120,9 +120,9 @@
         state.connections = L.polyline(latlngs, {
             color: '#263238',
             weight: 5,
-            opacity: 0.8,
-            dashArray: '8 12',
+            opacity: 0.9,
             lineCap: 'round',
+            lineJoin: 'round',
             className: 'route-line'
         }).addTo(state.map);
     }
