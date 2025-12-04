@@ -62,6 +62,7 @@
             }
 
             state.geojsonData = await response.json();
+            updatePageTitle();
             renderPersonNetwork();
         } catch (error) {
             console.error('Error loading data:', error);
@@ -89,11 +90,13 @@
     }
 
     function addMarkers(points) {
-        state.markers = points.map(point => {
+        state.markers = points.map((point, idx) => {
+            const isStart = idx === 0;
             const marker = L.circleMarker(point.coords, {
-                radius: 10,
-                weight: 2,
+                radius: isStart ? 12 : 10,
+                weight: isStart ? 3 : 2,
                 color: '#FFFFFF',
+                className: isStart ? 'start-marker' : '',
                 fillColor: getEventColor(point.properties.tags),
                 fillOpacity: 0.9
             });
@@ -101,15 +104,15 @@
             marker.bindPopup(createPopupContent(point));
             marker.addTo(state.map);
 
-            addStationLabel(marker, point.index + 1);
+            addStationLabel(marker, point.index + 1, isStart);
 
             return marker;
         });
     }
 
-    function addStationLabel(marker, number) {
+    function addStationLabel(marker, number, isStart = false) {
         const label = L.divIcon({
-            className: 'station-label',
+            className: `station-label${isStart ? ' station-label--start' : ''}`,
             html: `<span>${number}</span>`,
             iconSize: [20, 20]
         });
@@ -143,6 +146,17 @@
     function getEventColor(tags = []) {
         const eventType = tags.find(tag => EVENT_TYPES.has(tag));
         return CONFIG.colors[eventType] || '#546E7A';
+    }
+
+    function updatePageTitle() {
+        const titleElement = document.getElementById('person-network-title');
+        if (!titleElement) return;
+
+        const personName = state.geojsonData?.metadata?.person_name
+            || state.geojsonData?.features?.[0]?.properties?.person_name
+            || 'Unbekannte Person';
+
+        titleElement.textContent = `Personenbezogene Netzwerk-Ansicht: ${personName}`;
     }
 
     function createPopupContent(point) {
