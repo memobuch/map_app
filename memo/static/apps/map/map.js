@@ -1,6 +1,6 @@
 // ===================================
 // MEMO Enhanced Map - JavaScript
-// Version 5.1.1 - Nested Vocab + Event Type Clusters + Text Fix
+// Version 5.1.3 - Fixed Cluster Popup Address Logic
 // ===================================
 
 (function() {
@@ -95,7 +95,7 @@
 
     // ===== Initialization =====
     function init() {
-        console.log('Initializing MEMO Map (v5.1 - Nested Vocab + Event Type Clusters)...');
+        console.log('Initializing MEMO Map (v5.1.2 - Improved Text Spacing)...');
         initializeMap();
         loadGeoJSONData();
     }
@@ -626,8 +626,12 @@
         const personsArray = Array.from(personsMap.values());
         const personCount = personsArray.length;
         
-        // Get place name from first person
-        const placeName = personsArray[0]?.properties?.place_name || 'Unbekannter Ort';
+        // Check if all events are at the exact same location (same place_name)
+        // If they are, we can show the place name. If not, it's a computed cluster.
+        const allPlaceNames = personsArray.map(p => p.properties?.place_name).filter(Boolean);
+        const uniquePlaceNames = [...new Set(allPlaceNames)];
+        const isSameLocation = uniquePlaceNames.length === 1;
+        const placeName = isSameLocation ? uniquePlaceNames[0] : null;
         
         // Count total events
         let totalEvents = 0;
@@ -639,7 +643,16 @@
         
         // Header with summary
         html += '<div class="popup-header">';
-        html += `<div class="popup-name" style="font-size: 1.1rem;">${escapeHtml(placeName)}</div>`;
+        
+        // Only show place name if all events are at the same location
+        if (placeName) {
+            html += `<div class="popup-name" style="font-size: 1.1rem;">${escapeHtml(placeName)}</div>`;
+        } else {
+            // For computed clusters, show a generic title
+            html += `<div class="popup-name" style="font-size: 1.1rem;">Ereignis-Cluster</div>`;
+            html += `<div class="popup-note" style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">Mehrere Orte in diesem Bereich</div>`;
+        }
+        
         html += `<div class="popup-summary" style="margin-top: 0.5rem; padding: 0.5rem; background: #f5f5f0; border-left: 4px solid #1a1a1a;">`;
         html += `<strong>${personCount}</strong> Person${personCount !== 1 ? 'en' : ''} • `;
         html += `<strong>${totalEvents}</strong> Ereignis${totalEvents !== 1 ? 'se' : ''}`;
@@ -648,7 +661,14 @@
         
         // Persons list - compact and scrollable
         html += '<div class="popup-section">';
-        html += '<div class="popup-label">Personen an diesem Ort</div>';
+        
+        // Adapt label based on whether it's same location or computed cluster
+        if (isSameLocation) {
+            html += '<div class="popup-label">Personen an diesem Ort</div>';
+        } else {
+            html += '<div class="popup-label">Personen in diesem Cluster</div>';
+        }
+        
         html += '<div class="persons-list">';
         
         // Sort persons by name
