@@ -91,18 +91,26 @@
         addConnections(orderedPoints);
         fitBounds(orderedPoints);
         addNavigationControl();
+        renderJourneyPanel(orderedPoints);
+        setActiveStation(0);
     }
 
     function addMarkers(points) {
         state.markers = points.map((point, idx) => {
             const isStart = idx === 0;
-            const marker = L.circleMarker(point.coords, {
-                radius: isStart ? 13 : 10,
-                weight: isStart ? 4 : 2,
-                color: '#ffffff',
-                className: isStart ? 'start-marker' : '',
-                fillColor: getEventColor(point.properties.tags),
-                fillOpacity: 0.95
+            const eventColor = getEventColor(point.properties.tags);
+            const marker = L.marker(point.coords, {
+                icon: L.divIcon({
+                    className: `network-marker ${isStart ? 'network-marker--start' : ''}`,
+                    html: `
+                        <div class="network-marker__halo"></div>
+                        <div class="network-marker__dot" style="--marker-color:${eventColor}"></div>
+                        <div class="network-marker__label">${idx + 1}</div>
+                    `,
+                    iconSize: [38, 44],
+                    iconAnchor: [19, 19],
+                    popupAnchor: [0, -14]
+                })
             });
 
             marker.bindPopup(createPopupContent({ ...point, index: idx }));
@@ -120,9 +128,12 @@
 
         const latlngs = points.map(point => point.coords);
         state.connections = L.polyline(latlngs, {
-            color: '#37474F',
-            weight: 4,
-            opacity: 0.75
+            color: '#263238',
+            weight: 5,
+            opacity: 0.8,
+            dashArray: '8 12',
+            lineCap: 'round',
+            className: 'route-line'
         }).addTo(state.map);
     }
 
@@ -142,6 +153,8 @@
         const marker = state.markers[index];
         marker.openPopup();
         state.map.panTo(marker.getLatLng(), { animate: true });
+        highlightMarker(index);
+        updateJourneyPanel(index);
     }
 
     function addNavigationControl() {
@@ -182,6 +195,13 @@
     function getEventColor(tags = []) {
         const eventType = tags.find(tag => EVENT_TYPES.has(tag));
         return CONFIG.colors[eventType] || '#546E7A';
+    }
+
+    function getEventLabel(tags = []) {
+        const { eventTypes } = parseTags(tags);
+        const eventType = eventTypes[0];
+        if (!eventType) return 'Ereignis';
+        return state.geojsonData.vocab?.event_types?.[eventType] || translateEventType(eventType);
     }
 
     function updatePageTitle() {
@@ -310,6 +330,81 @@
         };
 
         legend.addTo(state.map);
+    }
+
+    function highlightMarker(index) {
+        state.markers.forEach((marker, idx) => {
+            const element = marker.getElement();
+            if (element) {
+                element.classList.toggle('is-active', idx === index);
+            }
+        });
+    }
+
+    function renderJourneyPanel(points) {
+        const panel = document.getElementById('journey-panel');
+        if (!panel) return;
+
+        const personName = state.geojsonData?.metadata?.person_name
+            || state.geojsonData?.features?.[0]?.properties?.person_name
+            || 'Unbekannte Person';
+
+        panel.innerHTML = `
+            <div class="journey-header">
+                <div>
+                    <div class="journey-eyebrow">Stationen</div>
+                    <div class="journey-title">${personName}</div>
+                </div>
+                <div class="journey-controls">
+                    <button class="journey-btn" type="button" data-step="-1" aria-label="Vorherige Station">Zurück</button>
+                    <span class="journey-progress"><span id="journey-current">1</span> / ${points.length}</span>
+                    <button class="journey-btn" type="button" data-step="1" aria-label="Nächste Station">Weiter</button>
+                </div>
+            </div>
+            <ol class="journey-list">
+                ${points.map((point, idx) => `
+                    <li class="journey-item" data-index="${idx}">
+                        <div class="journey-item__marker" style="--marker-color:${getEventColor(point.properties.tags)}">${idx + 1}</div>
+                        <div class="journey-item__content">
+                            <div class="journey-item__title">${point.properties.place_name || 'Unbekannter Ort'}</div>
+                            <div class="journey-item__meta">
+                                <span class="pill">${getEventLabel(point.properties.tags)}</span>
+                                <span>${point.properties.date || 'Ohne Datum'}</span>
+                            </div>
+                        </div>
+                    </li>
+                `).join('')}
+            </ol>
+        `;
+
+        panel.querySelectorAll('.journey-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const step = Number(button.dataset.step) || 0;
+                goToStation(step);
+            });
+        });
+
+        panel.querySelectorAll('.journey-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const targetIndex = Number(item.dataset.index);
+                setActiveStation(targetIndex);
+            });
+        });
+    }
+
+    function updateJourneyPanel(index) {
+        const progressEl = document.getElementById('journey-current');
+        if (progressEl) {
+            progressEl.textContent = String(index + 1);
+        }
+
+        document.querySelectorAll('.journey-item').forEach((item, idx) => {
+            item.classList.toggle('is-active', idx === index);
+            if (idx === index) {
+                item.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+            }
+        });
     }
 
     function translateEventType(key) {
