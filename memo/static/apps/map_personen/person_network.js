@@ -2,7 +2,7 @@
     'use strict';
 
     const CONFIG = {
-        geojsonFile: '/memo/static/apps/map/sample_person_network.json',
+        geojsonFile: '/memo/static/apps/map_personen/sample_person_network.json',
         mapCenter: [47.0707, 15.4395],
         mapZoom: 5,
         minZoom: 3,
@@ -91,7 +91,6 @@
         addConnections(orderedPoints);
         fitBounds(orderedPoints);
         addNavigationControl();
-        setActiveStation(0);
     }
 
     function addMarkers(points) {
