@@ -31,51 +31,17 @@
             <div class="controls-content">
                 <!-- Event Type Filters -->
                 <div class="filter-section">
-                    <h3 class="filter-title">Ereignistypen filtern</h3>
-                    <div class="filter-grid">
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-voluntary" checked data-event-type="voluntary_residence">
-                            <span class="filter-label">
-                                <span class="color-indicator" style="background-color: #2196F3;"></span>
-                                Freiwillige Wohnadresse
-                            </span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-forced" checked data-event-type="forced_residence">
-                            <span class="filter-label">
-                                <span class="color-indicator" style="background-color: #FF9800;"></span>
-                                Erzwungene Wohnadresse
-                            </span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-imprisonment" checked data-event-type="imprisonment">
-                            <span class="filter-label">
-                                <span class="color-indicator" style="background-color: #F44336;"></span>
-                                Haft
-                            </span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-flight" checked data-event-type="flight">
-                            <span class="filter-label">
-                                <span class="color-indicator" style="background-color: #9C27B0;"></span>
-                                Flucht
-                            </span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-death" checked data-event-type="death">
-                            <span class="filter-label">
-                                <span class="color-indicator" style="background-color: #000000;"></span>
-                                Tod
-                            </span>
-                        </label>
+                    <h3 class="filter-title">Ereignistypen filtern (Formen)</h3>
+                    <div class="filter-grid" id="event-type-filters">
+                        <!-- Dynamically populated from vocab -->
                     </div>
                 </div>
 
                 <!-- Victim Category Filters -->
                 <div class="filter-section">
-                    <h3 class="filter-title">Opferkategorien filtern</h3>
+                    <h3 class="filter-title">Opferkategorien filtern (Farben)</h3>
                     <div class="filter-grid" id="victim-category-filters">
-                        <!-- Dynamically populated -->
+                        <!-- Dynamically populated from vocab -->
                     </div>
                 </div>
 
