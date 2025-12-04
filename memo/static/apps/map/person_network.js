@@ -107,8 +107,9 @@
             });
 
             marker.bindPopup(createPopupContent({ ...point, index: idx }));
-            marker.on('click', () => setActiveStation(idx));
             marker.addTo(state.map);
+
+            addStationLabel(marker, idx + 1, isStart);
 
             return marker;
         });
