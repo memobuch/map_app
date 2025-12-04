@@ -594,3 +594,29 @@ a:focus {
 .filter-label .color-indicator {
     margin-right: 0.25rem;
 }
+
+/* ===== Marker Clusters - Enhanced for Event Type Breakdown ===== */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+    background-color: transparent !important;
+}
+
+.marker-cluster-eventtype div {
+    background-color: transparent !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50%;
+}
+
+.marker-cluster-eventtype svg {
+    display: block;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Hover effect for clusters */
+.marker-cluster-eventtype:hover svg {
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+}
