@@ -30,10 +30,6 @@
     0% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.08); opacity: 0.8; }
     100% { transform: scale(1); opacity: 1; }
-    background: linear-gradient(135deg, #FFCA28 0%, #FFB300 100%);
-    color: #000;
-    border-color: #000;
-    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 3px 10px rgba(0, 0, 0, 0.35);
 }
 
 .station-label span {
