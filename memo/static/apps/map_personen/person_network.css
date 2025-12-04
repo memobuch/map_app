@@ -199,54 +199,43 @@
 
 .network-marker {
     position: relative;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
 }
 
 .network-marker__halo {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 70%);
-    transform: scale(1.2);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%);
+    transform: scale(1.25);
 }
 
-.network-marker__dot {
+.network-marker__core {
     position: absolute;
     inset: 4px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--marker-color, #2196f3) 0%, #102027 100%);
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 50%),
+        linear-gradient(135deg, var(--marker-color, #2196f3) 0%, #0f172a 100%);
     border: 2px solid #ffffff;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-    transform: scale(1);
-    transition: transform 0.2s ease;
-}
-
-.network-marker__label {
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    min-width: 24px;
-    height: 22px;
-    border-radius: 999px;
-    background: #1a1a1a;
     color: #fff;
-    font-size: 0.75rem;
-    font-weight: 800;
     display: grid;
     place-items: center;
-    padding: 0 6px;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+    font-weight: 800;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    transform: scale(1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.network-marker--start .network-marker__dot {
-    transform: scale(1.1);
+.network-marker--start .network-marker__core {
+    transform: scale(1.05);
     box-shadow: 0 10px 24px rgba(33, 150, 243, 0.5);
 }
 
-.network-marker.is-active .network-marker__dot {
+.network-marker.is-active .network-marker__core {
     transform: scale(1.15);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
 }
 
 .leaflet-pane svg .route-line {
