@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>MEMO – Personenkarte</title>
+
+	<!-- Leaflet CSS -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+	<!-- Custom CSS: reuse base look and feel -->
+	<link rel="stylesheet" href="/memo/static/apps/map/map.css">
+	<link rel="stylesheet" href="/memo/static/apps/persons_map/persons_map.css">
+</head>
+<body>
+	<div class="container">
+		<!-- Header -->
+		<header class="header">
+			<div class="header-content">
+				<h1 class="title">Digitales Memobuch</h1>
+				<p class="subtitle">Stationen einer Person (chronologisch)</p>
+				<div class="divider"></div>
+			</div>
+		</header>
+
+		<!-- Map Container -->
+		<div id="map" class="map-container">
+			<!-- Inline navigation panel inside map -->
+			<div id="pm-nav" class="pm-nav">
+				<div class="pm-nav-header">
+					<span id="pm-nav-title" class="pm-nav-title">Stationen</span>
+					<span id="pm-nav-counter" class="pm-nav-counter">0/0</span>
+				</div>
+				<div id="pm-nav-body" class="pm-nav-body">
+					<div id="pm-nav-event" class="pm-nav-event">—</div>
+					<div id="pm-nav-place" class="pm-nav-place">—</div>
+					<div id="pm-nav-date" class="pm-nav-date">—</div>
+				</div>
+				<div class="pm-nav-actions">
+					<button id="pm-prev" class="pm-btn" type="button">Zurück</button>
+					<button id="pm-next" class="pm-btn pm-btn-primary" type="button">Weiter</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Info Panel -->
+		<div class="info-panel">
+			<div class="info-content">
+				<h3>Hinweis</h3>
+				<p>
+					Diese Ansicht zeigt die dokumentierten Stationen einer Person
+					in chronologischer Reihenfolge. 
+			</div>
+		</div>
+	</div>
+
+	<!-- Leaflet JS -->
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+	<!-- Persons Map JS -->
+	<script src="/memo/static/apps/persons_map/persons_map.js"></script>
+</body>
+</html>

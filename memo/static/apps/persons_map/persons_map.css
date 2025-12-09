@@ -1,0 +1,111 @@
+/* Lightweight additions specific to the persons map */
+
+.map-container {
+	min-height: 70vh;
+}
+
+.pm-step-label {
+	background: #fff;
+	color: #333;
+	border: 1px solid #ccc;
+	border-radius: 12px;
+	padding: 2px 6px;
+	font-size: 12px;
+}
+
+.pm-legend {
+	position: absolute;
+	right: 16px;
+	bottom: 16px;
+	background: rgba(255,255,255,0.9);
+	padding: 8px 10px;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.pm-legend-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 4px 0;
+	font-size: 12px;
+}
+
+/* Inline navigation panel inside the map */
+.pm-nav {
+	position: absolute;
+	left: 16px;
+	bottom: 16px;
+	z-index: 1000;
+	background: rgba(255, 255, 255, 0.95);
+	border: 2px solid #1a1a1a;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+	border-radius: 6px;
+	min-width: 280px;
+}
+
+.pm-nav-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 12px;
+	border-bottom: 2px solid #1a1a1a;
+}
+
+.pm-nav-title {
+	font-size: 0.9rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.pm-nav-counter {
+	font-family: 'Courier New', monospace;
+	font-weight: 700;
+}
+
+.pm-nav-body {
+	padding: 10px 12px;
+}
+
+.pm-nav-event {
+	font-size: 0.9rem;
+	color: #666;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-bottom: 6px;
+}
+
+.pm-nav-place {
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.pm-nav-date {
+	color: #333;
+}
+
+.pm-nav-actions {
+	display: flex;
+	gap: 8px;
+	padding: 10px 12px;
+	border-top: 1px solid #ddd;
+}
+
+.pm-btn {
+	padding: 6px 12px;
+	border: 1px solid #1a1a1a;
+	background: #fff;
+	color: #1a1a1a;
+	cursor: pointer;
+}
+
+.pm-btn:hover { background: #f0f0f0; }
+
+.pm-btn-primary {
+	background: #1a1a1a;
+	color: #f5f5f0;
+}
+.pm-btn-primary:hover { background: #333; }
+
+/* Hidden state handled inline via display:none for cleaner UX */

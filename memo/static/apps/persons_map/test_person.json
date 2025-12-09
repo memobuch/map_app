@@ -1,0 +1,157 @@
+{
+  "type": "FeatureCollection",
+  "vocab": {
+    "event_types": {
+      "voluntary_residence": {
+        "label": "Letzte Freiwillige Wohnadresse",
+        "color": "#b3b3b3",
+        "shape": "circle"
+      },
+      "forced_residence": {
+        "label": "Erzwungene Wohnadresse",
+        "color": "#666666",
+        "shape": "square"
+      },
+      "imprisonment": {
+        "label": "Haft",
+        "color": "#404040",
+        "shape": "diamond"
+      },
+      "flight": {
+        "label": "Flucht",
+        "color": "#8c8c8c",
+        "shape": "triangle"
+      },
+      "death": {
+        "label": "Tod",
+        "color": "#1a1a1a",
+        "shape": "cross"
+      }
+    },
+    "victim_category_types": {
+      "widerstand;politisch": {
+        "label": "Widerstand, politisch",
+        "color": "#ADFF2F"
+      },
+      "widerstand;religiös": {
+        "label": "Widerstand, religios",
+        "color": "#ADFF2F"
+      },
+      "widerstand;individuell": {
+        "label": "Widerstand, individuell",
+        "color": "#ADFF2F"
+      },
+      "widerstand;deserteure": {
+        "label": "Widerstand, Deserteure",
+        "color": "#ADFF2F"
+      },
+      "zeugenjehovas": {
+        "label": "Zeugen Jehovas",
+        "color": "#EE4B2B"
+      },
+      "jüdischeopfer;jüdisch": {
+        "label": "Jüdische Opfer",
+        "color": "#228B22"
+      },
+      "jüdischeopfer;als Jude verfolgt": {
+        "label": "Jüdische Opfer, als Jude verfolgt",
+        "color": "#228B22"
+      },
+      "roma": {
+        "label": "Roma",
+        "color": "#FF8C00"
+      },
+      "euthanasieopfer": {
+        "label": "Euthanasie Opfer",
+        "color": "#ADD8E6"
+      },
+      "homosexuelleopfer": {
+        "label": "Homosexuelle Opfer",
+        "color": "#00008B"
+      },
+      "opfernsjustiz": {
+        "label": "Opfer der NS-Justiz",
+        "color": "#4169E1"
+      },
+      "asoziale": {
+        "label": "Asoziale",
+        "color": "#B5523E"
+      },
+      "spanienkämpfer": {
+        "label": "SpanienkämpferInnen",
+        "color": "#702963"
+      },
+      "zwangsarbeiter": {
+        "label": "ZwangsarbeiterInnen",
+        "color": "#E0FFFF"
+      },
+      "alliierte": {
+        "label": "Alliierte Soldaten",
+        "color": "#00BFCB"
+      },
+      "zivileopfer": {
+        "label": "Zivile Opfer",
+        "color": "#8B008B"
+      }
+    }
+  },
+  "metadata": {
+    "person_id": "memo.person.3",
+    "person_name": "Ferdinand Altmann",
+    "birth_date": "23.03.1898",
+    "death_date": "31.12.1943",
+    "is_youth": false,
+    "gams_link": "https://gams.uni-graz.at/o:memo.person.3",
+    "feature_count": 2
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.43133551,
+          47.07102645
+        ]
+      },
+      "properties": {
+        "person_id": "memo.person.3",
+        "person_name": "Ferdinand Altmann",
+        "tags": [
+          "voluntary_residence",
+          "jüdischeopfer;jüdisch"
+        ],
+        "place_name": "Annenstraße 9/2, 8020 Graz",
+        "date": null,
+        "birth_date": "23.03.1898",
+        "death_date": "31.12.1943",
+        "gender": "male",
+        "is_youth": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.14128036,
+          50.51927431
+        ]
+      },
+      "properties": {
+        "person_id": "memo.person.3",
+        "person_name": "Ferdinand Altmann",
+        "tags": [
+          "death",
+          "jüdischeopfer;jüdisch"
+        ],
+        "place_name": "Nisko am San",
+        "date": "31.12.1943",
+        "birth_date": "23.03.1898",
+        "death_date": "31.12.1943",
+        "gender": "male",
+        "is_youth": false
+      }
+    }
+  ]
+}
