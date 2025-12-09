@@ -2,7 +2,7 @@
 
 (function () {
 	const DATA_URL = 
-		"/memo/static/apps/persons_map/test_person.json"; // replace later with dynamic
+		"/memo/static/apps/persons_map/test_person.json";
 
 	// Fallback colors for victim categories when vocab doesn't provide a color
 	const DEFAULT_VICTIM_COLORS = {
@@ -24,7 +24,7 @@
 		"zivileopfer": "#8da0cb"
 	};
 
-	// Map init (use EXACT same basemap as base-map: CartoDB Positron)
+	// Map init 
 	const map = L.map("map");
 	L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
@@ -132,7 +132,7 @@
 
 			// Use circle markers to exactly represent coordinates (drop symbols)
 			const m = L.circleMarker(latlng, {
-				radius: 10, // larger for easier clicking
+				radius: 10,
 				color: color,
 				weight: 2,
 				fillColor: color,
@@ -151,9 +151,7 @@
 								.filter(t => victimTypes[t])
 								.map(t => victimTypes[t]?.label || t)
 								.join(', ');
-						// const gamsLink = metadata?.gams_link; // removed per request
 
-						// Popup content styled like base map (uses map.css classes)
 						const popupHtml = `
 							<div class="popup-content">
 								<div class="popup-header">
@@ -186,10 +184,8 @@
 
 		// Draw polyline connecting stations in order
 		if (pathLatLngs.length >= 2) {
-			L.polyline(pathLatLngs, { color: "#333", weight: 3, opacity: 0.8 }).addTo(map);
+			L.polyline(pathLatLngs, { color: "#333", weight: 2, opacity: 0.8 }).addTo(map);
 		}
-
-		// Legend removed (redundant)
 
 		// Navigation panel logic
 		const prevBtn = document.getElementById('pm-prev');
@@ -200,7 +196,7 @@
 		const dateEl = document.getElementById('pm-nav-date');
 		const titleEl = document.getElementById('pm-nav-title');
 
-		let currentIndex = 0;
+		let currentIndex = -1; // no selection initially
 
 		// Set dynamic panel title to person name
 		if (titleEl) {
@@ -209,10 +205,11 @@
 
 		function setNavButtonsState() {
 			if (!prevBtn || !nextBtn) return;
+			const noSelection = currentIndex === -1;
 			const atStart = currentIndex <= 0;
 			const atEnd = currentIndex >= (markers.length - 1);
-			prevBtn.style.display = atStart ? 'none' : '';
-			nextBtn.style.display = atEnd ? 'none' : '';
+			prevBtn.style.display = (noSelection || atStart) ? 'none' : '';
+			nextBtn.style.display = (markers.length === 0 || atEnd) ? 'none' : '';
 		}
 
 		function updatePanel(i) {
@@ -229,16 +226,26 @@
 			setNavButtonsState();
 		}
 
-		function goPrev() { updatePanel(currentIndex - 1); }
-		function goNext() { updatePanel(currentIndex + 1); }
+		function goPrev() {
+			if (currentIndex <= 0) return;
+			updatePanel(currentIndex - 1);
+		}
+		function goNext() {
+			if (currentIndex === -1) { updatePanel(0); return; }
+			updatePanel(currentIndex + 1);
+		}
 
 		if (prevBtn && nextBtn) {
 			prevBtn.addEventListener('click', goPrev);
 			nextBtn.addEventListener('click', goNext);
 		}
 
-		// Initialize panel at first station
-		updatePanel(0);
+		// Initialize panel without selecting a point
+		counterEl.textContent = `0/${markers.length}`;
+		eventEl.textContent = '—';
+		placeEl.textContent = '—';
+		dateEl.textContent = '—';
+		setNavButtonsState();
 	}
 
 	fetch(DATA_URL)
