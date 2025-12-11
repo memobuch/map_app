@@ -6,11 +6,11 @@
 
 .pm-step-label {
 	background: #fff;
-	color: #333;
+	color: #727171;
 	border: 1px solid #ccc;
 	border-radius: 12px;
-	padding: 2px 6px;
-	font-size: 12px;
+	padding: 6px 8px;
+	font-size: 13px;
 }
 
 .pm-legend {
@@ -38,7 +38,7 @@
 	bottom: 16px;
 	z-index: 1000;
 	background: rgba(255, 255, 255, 0.95);
-	border: 2px solid #1a1a1a;
+	border: 1.5px solid #1a1a1a;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 	border-radius: 6px;
 	min-width: 280px;
@@ -49,7 +49,7 @@
 	justify-content: space-between;
 	align-items: center;
 	padding: 8px 12px;
-	border-bottom: 2px solid #1a1a1a;
+	border-bottom: 1px solid #1a1a1a;
 }
 
 .pm-nav-title {
@@ -73,6 +73,7 @@
 	color: #666;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
+	margin-top: 10px;
 	margin-bottom: 6px;
 }
 
@@ -82,7 +83,19 @@
 }
 
 .pm-nav-date {
+	margin-top: 20px;
 	color: #333;
+}
+
+.pm-nav-toggle {
+	margin-top: 12px;
+}
+
+.pm-toggle-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.9rem;
 }
 
 .pm-nav-actions {
@@ -108,4 +121,43 @@
 }
 .pm-btn-primary:hover { background: #333; }
 
+/* Disabled state for buttons: keep layout, reduce emphasis */
+.pm-btn:disabled {
+	opacity: 0.6;
+	background: #f7f7f7;
+	color: #9d9d9d;
+	border-color: #ccc;
+	cursor: not-allowed;
+}
+
+.pm-btn-primary:disabled {
+	background: #bfbfbf;
+	color: #f0f0f0;
+	border-color: #bfbfbf;
+}
+
+/* Override Leaflet MarkerCluster default green colors to neutral grays */
+.marker-cluster-small {
+	background-color: rgba(200, 200, 200, 0.6);
+}
+.marker-cluster-small div {
+	background-color: rgba(120, 120, 120, 0.8);
+	color: #fff;
+}
+
+.marker-cluster-medium {
+	background-color: rgba(180, 180, 180, 0.6);
+}
+.marker-cluster-medium div {
+	background-color: rgba(100, 100, 100, 0.85);
+	color: #fff;
+}
+
+.marker-cluster-large {
+	background-color: rgba(160, 160, 160, 0.6);
+}
+.marker-cluster-large div {
+	background-color: rgba(80, 80, 80, 0.9);
+	color: #fff;
+}
 

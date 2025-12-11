@@ -12,6 +12,16 @@
 		maxZoom: 28
 	}).addTo(map);
 
+	// Cluster group for spiderfying overlapping points
+	const clusterGroup = L.markerClusterGroup({
+		maxClusterRadius: 60,
+		spiderfyOnMaxZoom: true,
+		showCoverageOnHover: false,
+		zoomToBoundsOnClick: true,
+		spiderLegPolylineOptions: { weight: 1.5, color: '#666', opacity: 0.6 }
+	});
+	map.addLayer(clusterGroup);
+
 	function parseDate(d) {
 		if (!d) return null;
 		// Expecting dd.mm.yyyy
@@ -55,7 +65,6 @@
 
 		ordered.push(...voluntary);
 		ordered.push(...others);
-		// If multiple death, keep by date ascending and take last position
 		death.sort((a, b) => {
 			const da = parseDate(a.properties.date);
 			const db = parseDate(b.properties.date);
@@ -67,6 +76,21 @@
 		ordered.push(...death);
 
 		return ordered;
+	}
+
+	function createCircleIcon(color) {
+		const svg = `
+			<svg width="24" height="24" viewBox="0 0 24 24">
+				<circle cx="12" cy="12" r="8" fill="${color}" stroke="#333" stroke-width="2"/>
+			</svg>
+		`;
+		return L.divIcon({
+			html: svg,
+			className: 'pm-circle-marker',
+			iconSize: [24, 24],
+			iconAnchor: [12, 12],
+			popupAnchor: [0, -12]
+		});
 	}
 
 	function main(data) {
@@ -98,18 +122,14 @@
 			const evtTag = (props.tags || []).find(t => eventTypes[t]);
 			let color = evtTag ? (eventTypes[evtTag]?.color || "#1f78b4") : "#1f78b4";
 
-			// Use circle markers to exactly represent coordinates (drop symbols)
-			const m = L.circleMarker(latlng, {
-				radius: 10,
-				color: color,
-				weight: 2,
-				fillColor: color,
-				fillOpacity: 0.85,
-				interactive: true
-			}).addTo(map);
-			// Enumerate stations: add a small permanent tooltip with the sequence number
+			// Use L.marker with DivIcon so cluster group can spiderfy
+			const m = L.marker(latlng, {
+				icon: createCircleIcon(color),
+				title: props.place_name || metadata?.person_name || 'Station'
+			});
+			// Enumerate stations: add a small tooltip with the sequence number
 			m.bindTooltip(String(idx + 1), {
-				permanent: true,
+				permanent: false,
 				direction: 'top',
 				className: 'pm-step-label'
 			});
@@ -148,11 +168,40 @@
 							updatePanel(idx);
 						});
 						markers.push({ marker: m, props, latlng, evtTag, idx });
+
+						// Add to cluster group (enables spiderfy on overlap)
+						clusterGroup.addLayer(m);
 		});
 
-		// Draw polyline connecting stations in order
+		// Create dashed polyline for path connecting the points
+		let pathLine = null;
+		let pathArrows = null;
+		const arrowOptions = {
+			patterns: [
+				{
+					offset: '12px',
+					repeat: '60px',
+					symbol: L.Symbol && L.Symbol.arrowHead ? L.Symbol.arrowHead({
+						pixelSize: 10,
+						polygon: false,
+						pathOptions: { color: '#333', weight: 2, opacity: 0.9 }
+					}) : null
+				}
+			]
+		};
 		if (pathLatLngs.length >= 2) {
-			L.polyline(pathLatLngs, { color: "#333", weight: 2, opacity: 0.8 }).addTo(map);
+			pathLine = L.polyline(pathLatLngs, {
+				color: "#333",
+				weight: 3,
+				opacity: 0.8,
+				dashArray: '4 6',
+				lineCap: 'round',
+				lineJoin: 'round'
+			});
+			// Prepare directional arrows (visibility handled dynamically)
+			if (L.polylineDecorator && arrowOptions.patterns[0].symbol) {
+				pathArrows = L.polylineDecorator(pathLine, arrowOptions);
+			}
 		}
 
 		// Legend
@@ -195,6 +244,14 @@
 		const placeEl = document.getElementById('pm-nav-place');
 		const dateEl = document.getElementById('pm-nav-date');
 		const titleEl = document.getElementById('pm-nav-title');
+		const toggleEl = document.getElementById('pm-toggle-path');
+		const panelEl = document.getElementById('pm-nav');
+
+		// Prevent map drag/scroll when interacting with the panel
+		if (panelEl) {
+			L.DomEvent.disableClickPropagation(panelEl);
+			L.DomEvent.disableScrollPropagation(panelEl);
+		}
 
 		let currentIndex = -1; // no selection initially
 
@@ -205,11 +262,11 @@
 
 		function setNavButtonsState() {
 			if (!prevBtn || !nextBtn) return;
-			const noSelection = currentIndex === -1;
 			const atStart = currentIndex <= 0;
 			const atEnd = currentIndex >= (markers.length - 1);
-			prevBtn.style.display = (noSelection || atStart) ? 'none' : '';
-			nextBtn.style.display = (markers.length === 0 || atEnd) ? 'none' : '';
+			// Keep buttons visible but disable them at bounds
+			prevBtn.disabled = atStart;
+			nextBtn.disabled = (markers.length === 0) || atEnd;
 		}
 
 		function updatePanel(i) {
@@ -221,8 +278,15 @@
 			eventEl.textContent = eventLabel;
 			placeEl.textContent = props.place_name || 'Ort unbekannt';
 			dateEl.textContent = props.date || 'unbekanntes Datum';
-			marker.openPopup();
-			map.panTo(marker.getLatLng());
+			// Ensure popup is visible even when marker is inside a cluster
+			(function ensureVisibleAndOpen() {
+				const parent = clusterGroup.getVisibleParent(marker) || marker;
+				if (parent && parent.spiderfy) {
+					// If inside a cluster, spiderfy to reveal without changing zoom
+					parent.spiderfy();
+				}
+				marker.openPopup();
+			})();
 			setNavButtonsState();
 		}
 
@@ -240,12 +304,97 @@
 			nextBtn.addEventListener('click', goNext);
 		}
 
+		// Helper: compute path latlngs based on visible parents (clusters/markers)
+		function computeVisiblePathLatLngs() {
+			if (!markers.length) return [];
+			const latlngs = markers.map(m => {
+				const parent = clusterGroup.getVisibleParent(m.marker) || m.marker;
+				return parent.getLatLng ? parent.getLatLng() : m.marker.getLatLng();
+			});
+			// Collapse consecutive duplicates (when multiple points share same cluster)
+			const deduped = [];
+			for (let i = 0; i < latlngs.length; i++) {
+				const cur = latlngs[i];
+				const prev = deduped[deduped.length - 1];
+				if (!prev || prev.lat !== cur.lat || prev.lng !== cur.lng) {
+					deduped.push(cur);
+				}
+			}
+			return deduped;
+		}
+
+		// Update path to reflect current clustering/zoom and toggle
+		function updatePath() {
+			if (!pathLine) return; // nothing to draw
+			// Respect checkbox toggle if present
+			if (toggleEl && !toggleEl.checked) {
+				if (map.hasLayer(pathLine)) map.removeLayer(pathLine);
+				if (pathArrows && map.hasLayer(pathArrows)) map.removeLayer(pathArrows);
+				return;
+			}
+			const latlngs = computeVisiblePathLatLngs();
+			// Hide when fewer than two distinct visible waypoints
+			if (latlngs.length < 2) {
+				if (map.hasLayer(pathLine)) map.removeLayer(pathLine);
+				if (pathArrows && map.hasLayer(pathArrows)) map.removeLayer(pathArrows);
+				return;
+			}
+			pathLine.setLatLngs(latlngs);
+			if (!map.hasLayer(pathLine)) map.addLayer(pathLine);
+			if (pathArrows) {
+				// Keep arrows in sync with updated polyline
+				if (typeof pathArrows.setPaths === 'function') {
+					pathArrows.setPaths(pathLine);
+					if (!map.hasLayer(pathArrows)) map.addLayer(pathArrows);
+				} else {
+					if (map.hasLayer(pathArrows)) map.removeLayer(pathArrows);
+					if (L.polylineDecorator) {
+						pathArrows = L.polylineDecorator(pathLine, arrowOptions);
+						map.addLayer(pathArrows);
+					}
+				}
+			}
+		}
+
+		// Handle path visibility via checkbox and URL param
+		const urlParams = new URLSearchParams(window.location.search);
+		const paramPath = urlParams.get('path'); // "1" to show, "0" to hide
+		let showPath = true;
+		if (paramPath === '0') showPath = false;
+		if (paramPath === '1') showPath = true;
+
+		if (toggleEl) {
+			// Initialize checkbox state: from URL param or default true
+			toggleEl.checked = showPath;
+			// Apply initial state and wire events
+			updatePath();
+			toggleEl.addEventListener('change', updatePath);
+		} else {
+			// Fallback: respect URL param even if checkbox not found
+			updatePath();
+		}
+
+		// Keep path in sync with clustering/zoom interactions
+		if (pathLine) {
+			map.on('zoomend', updatePath);
+			map.on('moveend', updatePath);
+			clusterGroup.on('animationend', updatePath);
+			clusterGroup.on('spiderfied', updatePath);
+			clusterGroup.on('unspiderfied', updatePath);
+			clusterGroup.on('clusterclick', () => {
+				// Let zoom or spiderfy settle first
+				setTimeout(updatePath, 0);
+			});
+		}
+
 		// Initialize panel without selecting a point
 		counterEl.textContent = `0/${markers.length}`;
-		eventEl.textContent = '—';
-		placeEl.textContent = '—';
-		dateEl.textContent = '—';
+		eventEl.textContent = 'Typ';
+		placeEl.textContent = 'Ort';
+		dateEl.textContent = 'Datum';
 		setNavButtonsState();
+		// Ensure initial path reflects current view
+		updatePath();
 	}
 
 	fetch(DATA_URL)

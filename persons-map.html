@@ -7,6 +7,9 @@
 
 	<!-- Leaflet CSS -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	<!-- MarkerCluster CSS -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
 	<!-- Custom CSS: reuse base look and feel -->
 	<link rel="stylesheet" href="/memo/static/apps/map/map.css">
@@ -26,6 +29,12 @@
 					<div id="pm-nav-event" class="pm-nav-event">—</div>
 					<div id="pm-nav-place" class="pm-nav-place">—</div>
 					<div id="pm-nav-date" class="pm-nav-date">—</div>
+					<div class="pm-nav-toggle">
+						<label class="pm-toggle-label">
+							<input id="pm-toggle-path" type="checkbox" checked>
+							<span>Verlauf anzeigen</span>
+						</label>
+					</div>
 				</div>
 				<div class="pm-nav-actions">
 					<button id="pm-prev" class="pm-btn" type="button">Zurück</button>
@@ -37,6 +46,10 @@
 
 	<!-- Leaflet JS -->
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+	<!-- MarkerCluster JS -->
+	<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+	<!-- PolylineDecorator for elegant arrows along paths -->
+	<script src="https://unpkg.com/leaflet-polylinedecorator@1.7.0/dist/leaflet.polylineDecorator.min.js"></script>
 
 	<!-- Persons Map JS -->
 	<script src="/memo/static/apps/persons_map/persons_map.js"></script>
