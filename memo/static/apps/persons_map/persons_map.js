@@ -4,26 +4,6 @@
 	const DATA_URL = 
 		"/memo/static/apps/persons_map/test_person.json";
 
-	// Fallback colors for victim categories when vocab doesn't provide a color
-	const DEFAULT_VICTIM_COLORS = {
-		"widerstand;politisch": "#e41a1c",
-		"widerstand;religiös": "#e7298a",
-		"widerstand;individuell": "#fb9a99",
-		"widerstand;deserteure": "#fdbf6f",
-		"zeugenjehovas": "#bc80bd",
-		"jüdischeopfer;jüdisch": "#377eb8",
-		"jüdischeopfer;als Jude verfolgt": "#1f78b4",
-		"roma": "#984ea3",
-		"euthanasieopfer": "#ff7f00",
-		"homosexuelleopfer": "#4daf4a",
-		"opfernsjustiz": "#ffff33",
-		"asoziale": "#a65628",
-		"spanienkämpfer": "#f781bf",
-		"zwangsarbeiter": "#999999",
-		"alliierte": "#66c2a5",
-		"zivileopfer": "#8da0cb"
-	};
-
 	// Map init 
 	const map = L.map("map");
 	L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -106,9 +86,6 @@
 		const eventTypes = vocab.event_types || {};
 		const victimTypes = vocab.victim_category_types || {};
 
-		// We now color each point by its event_type, not victim category.
-		// No need to derive a single person-level color.
-
 		const pathLatLngs = [];
 		const markers = [];
 
@@ -178,7 +155,7 @@
 			L.polyline(pathLatLngs, { color: "#333", weight: 2, opacity: 0.8 }).addTo(map);
 		}
 
-		// Legend: Leaflet control so it persists reliably
+		// Legend
 		(function addLegendControl() {
 			const usedEventKeys = Array.from(new Set(
 				ordered.flatMap(f => (f.properties?.tags || []).filter(t => eventTypes[t]))
