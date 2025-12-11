@@ -106,17 +106,8 @@
 		const eventTypes = vocab.event_types || {};
 		const victimTypes = vocab.victim_category_types || {};
 
-		// Determine the person's primary victim category (first found across features)
-		let personVictimTag = null;
-		for (const f of features) {
-			const tags = f.properties?.tags || [];
-			const vt = tags.find(t => victimTypes[t]);
-			if (vt) { personVictimTag = vt; break; }
-		}
-		// Resolve color: prefer vocab color, else fallback, else default
-		const personVictimColor = personVictimTag
-			? (victimTypes[personVictimTag]?.color || DEFAULT_VICTIM_COLORS[personVictimTag] || "#1f78b4")
-			: "#1f78b4";
+		// We now color each point by its event_type, not victim category.
+		// No need to derive a single person-level color.
 
 		const pathLatLngs = [];
 		const markers = [];
@@ -126,9 +117,9 @@
 			const coords = f.geometry.coordinates;
 			const latlng = [coords[1], coords[0]];
 			pathLatLngs.push(latlng);
-			// Color strictly from person's victim category (consistent across all points)
-			let color = personVictimColor;
+			// Color per point from its event_type; fallback to a default.
 			const evtTag = (props.tags || []).find(t => eventTypes[t]);
+			let color = evtTag ? (eventTypes[evtTag]?.color || "#1f78b4") : "#1f78b4";
 
 			// Use circle markers to exactly represent coordinates (drop symbols)
 			const m = L.circleMarker(latlng, {
@@ -186,6 +177,38 @@
 		if (pathLatLngs.length >= 2) {
 			L.polyline(pathLatLngs, { color: "#333", weight: 2, opacity: 0.8 }).addTo(map);
 		}
+
+		// Legend: Leaflet control so it persists reliably
+		(function addLegendControl() {
+			const usedEventKeys = Array.from(new Set(
+				ordered.flatMap(f => (f.properties?.tags || []).filter(t => eventTypes[t]))
+			));
+			if (!usedEventKeys.length) return;
+
+			const LegendControl = L.Control.extend({
+				options: { position: 'bottomright' },
+				onAdd: function () {
+					const div = L.DomUtil.create('div', 'pm-legend');
+					div.setAttribute('aria-label', 'Ereignis-Legende');
+					usedEventKeys.forEach(key => {
+						const evt = eventTypes[key] || {};
+						const color = evt.color || '#1f78b4';
+						const label = evt.label || key;
+						const item = document.createElement('div');
+						item.className = 'pm-legend-item';
+						item.innerHTML = `
+							<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${color};border:1px solid #333"></span>
+							<span>${label}</span>
+						`;
+						div.appendChild(item);
+					});
+					// Prevent map drag when interacting with legend
+					L.DomEvent.disableClickPropagation(div);
+					return div;
+				}
+			});
+			map.addControl(new LegendControl());
+		})();
 
 		// Navigation panel logic
 		const prevBtn = document.getElementById('pm-prev');
