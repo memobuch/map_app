@@ -1,6 +1,6 @@
 /* ===================================
    MEMO Enhanced Map - CSS
-   Version 4.1 - Event Type Breakdown in Clusters
+   Version 6.0 - Voluntary Residence Focus
    =================================== */
 
 * {
@@ -54,7 +54,7 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr;
+    grid-template-columns: 3fr 1fr;
     gap: 2rem;
 }
 
@@ -78,7 +78,7 @@ body {
 
 .filter-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
 }
 
@@ -190,6 +190,7 @@ body {
     width: 16px;
     height: 16px;
     border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
     flex-shrink: 0;
 }
 
@@ -238,10 +239,6 @@ body {
     line-height: 1.5;
 }
 
-.popup-event-breakdown {
-    font-size: 0.85rem;
-}
-
 .popup-section {
     margin-bottom: 1rem;
 }
@@ -256,159 +253,97 @@ body {
     letter-spacing: 0.05em;
     color: #666;
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .popup-value {
     font-size: 0.9rem;
-    color: #333;
+    color: #1a1a1a;
 }
 
-/* Persons List in Cluster Popups */
+.popup-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.5rem 1rem;
+    background-color: #1a1a1a;
+    color: #f5f5f0;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: background-color 0.3s ease;
+}
+
+.popup-link:hover {
+    background-color: #333;
+}
+
 .persons-list {
     max-height: 300px;
     overflow-y: auto;
-    padding-right: 0.5rem;
+    margin-top: 0.5rem;
 }
 
 .person-item {
-    padding: 0.75rem 0;
+    padding: 0.5rem 0;
 }
 
 .person-name {
-    font-size: 0.95rem;
-    margin-bottom: 0.25rem;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .person-link {
     color: #1a1a1a;
-    text-decoration: none;
-    font-weight: 600;
-    transition: color 0.2s ease;
-}
-
-.person-link:hover {
-    color: #2196F3;
     text-decoration: underline;
 }
 
-.person-years {
+.person-link:hover {
     color: #666;
-    font-size: 0.85rem;
-    font-weight: normal;
+}
+
+.person-years {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 400;
 }
 
 .person-details {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.15rem;
+}
+
+.person-separator {
+    border-bottom: 1px solid #eee;
+}
+
+.popup-note {
     font-size: 0.85rem;
     color: #666;
     margin-top: 0.25rem;
 }
 
-.detail-item {
-    display: inline;
-}
-
-.victim-cat {
-    font-style: italic;
-}
-
-.person-separator {
-    height: 1px;
-    background: #ddd;
-    margin: 0.5rem 0;
-}
-
-/* Scrollbar styling for persons list */
-.persons-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.persons-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-}
-
-.persons-list::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
-}
-
-.persons-list::-webkit-scrollbar-thumb:hover {
-    background: #999;
-}
-
-.popup-link {
-    display: inline-block;
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    background-color: #1a1a1a;
-    color: #f5f5f0;
-    text-decoration: none;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    transition: all 0.2s ease;
-    border: 1px solid #1a1a1a;
-}
-
-.popup-link:hover {
-    background-color: #333;
-    border-color: #333;
-}
-
-.leaflet-popup-tip {
-    border: 1px solid #1a1a1a;
-}
-
-/* ===== Tooltips ===== */
-.leaflet-tooltip {
-    background: rgba(26, 26, 26, 0.95);
-    color: #f5f5f0;
-    border: 2px solid #1a1a1a;
-    border-radius: 0;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.leaflet-tooltip-top:before {
-    border-top-color: #1a1a1a;
-}
-
-.leaflet-tooltip-bottom:before {
-    border-bottom-color: #1a1a1a;
-}
-
-.leaflet-tooltip-left:before {
-    border-left-color: #1a1a1a;
-}
-
-.leaflet-tooltip-right:before {
-    border-right-color: #1a1a1a;
-}
-
-/* ===== Marker Clusters - Enhanced for Event Type Breakdown ===== */
+/* ===== Marker Clusters - Victim Category Breakdown ===== */
 .marker-cluster-small,
 .marker-cluster-medium,
 .marker-cluster-large {
     background-color: transparent !important;
 }
 
-.marker-cluster-eventtype div {
+.marker-cluster-category div {
     background-color: transparent !important;
     width: 100% !important;
     height: 100% !important;
     border-radius: 50%;
 }
 
-.marker-cluster-eventtype svg {
+.marker-cluster-category svg {
     display: block;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 /* Hover effect for clusters */
-.marker-cluster-eventtype:hover svg {
+.marker-cluster-category:hover svg {
     filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
     transform: scale(1.05);
     transition: all 0.2s ease;
@@ -470,6 +405,10 @@ body {
         grid-column: 1 / -1;
         flex-direction: row;
         justify-content: space-around;
+    }
+
+    .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -557,66 +496,7 @@ a:focus {
     z-index: 10000;
 }
 
-/* ===== Additional Styles for Version 4.1 ===== */
-
-/* Legend shape icons */
-.legend-shape {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    vertical-align: middle;
-    margin-right: 0.25rem;
-}
-
-.legend-shape svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-/* Filter label with inline SVG shapes */
-.filter-label svg {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    vertical-align: middle;
-    margin-right: 0.25rem;
-}
-
-/* Ensure shape indicators are properly aligned */
-.filter-label {
-    display: flex;
-    align-items: center;
-    font-size: 0.9rem;
-    gap: 0.25rem;
-}
-
+/* ===== Filter label with inline color indicators ===== */
 .filter-label .color-indicator {
     margin-right: 0.25rem;
-}
-
-/* ===== Marker Clusters - Enhanced for Event Type Breakdown ===== */
-.marker-cluster-small,
-.marker-cluster-medium,
-.marker-cluster-large {
-    background-color: transparent !important;
-}
-
-.marker-cluster-eventtype div {
-    background-color: transparent !important;
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 50%;
-}
-
-.marker-cluster-eventtype svg {
-    display: block;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-}
-
-/* Hover effect for clusters */
-.marker-cluster-eventtype:hover svg {
-    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
-    transform: scale(1.05);
-    transition: all 0.2s ease;
 }

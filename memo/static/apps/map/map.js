@@ -1,6 +1,8 @@
 // ===================================
 // MEMO Enhanced Map - JavaScript
-// Version 5.2.0 - Shape from Vocab + All Victim Categories in Filters
+// Version 6.0.0 - Voluntary Residence Focus
+// Only shows "Letzte Freiwillige Wohnadresse" events
+// Filters by Opferkategorien only
 // ===================================
 
 (function() {
@@ -12,7 +14,9 @@
         mapCenter: [47.0707, 15.4395],
         mapZoom: 13,
         minZoom: 1,
-        maxZoom: 28
+        maxZoom: 28,
+        // The single event type we display
+        targetEventType: 'voluntary_residence'
     };
 
     // ===== State =====
@@ -20,7 +24,7 @@
         map: null,
         geojsonData: null,
         
-        // Vocabulary from data (now contains nested objects with label & color)
+        // Vocabulary from data (kept complete for reference)
         vocab: {
             event_types: {},
             victim_category_types: {}
@@ -36,12 +40,11 @@
         // Layer
         markerCluster: null,
         
-        // Filters
-        activeEventTypes: new Set(),
+        // Filters - only victim categories (no event type filtering)
         activeVictimCategories: new Set(),
         allVictimCategories: new Set(),
         
-        // All point markers
+        // All point markers (only voluntary_residence)
         allPointMarkers: []
     };
 
@@ -50,16 +53,6 @@
     function getEventTypeLabel(type) {
         if (type === 'unknown') return 'Unbekannt';
         return state.vocab.event_types[type]?.label || type;
-    }
-
-    function getEventTypeColor(type) {
-        if (type === 'unknown') return '#999999';
-        return state.vocab.event_types[type]?.color || '#999999';
-    }
-
-    function getEventTypeShape(type) {
-        if (type === 'unknown') return 'hexagon';
-        return state.vocab.event_types[type]?.shape || 'circle';
     }
 
     function getVictimCategoryLabel(key) {
@@ -90,7 +83,7 @@
 
     // ===== Initialization =====
     function init() {
-        console.log('Initializing MEMO Map (v5.2.0 - Shape from Vocab + All Categories)...');
+        console.log('Initializing MEMO Map (v6.0.0 - Voluntary Residence Focus)...');
         initializeMap();
         loadGeoJSONData();
     }
@@ -123,7 +116,6 @@
 
         // Handle cluster clicks - show multi-person popup
         state.markerCluster.on('clusterclick', function(cluster) {
-            // Get all markers in this cluster
             const markers = cluster.layer.getAllChildMarkers();
             
             // Group by person_id to avoid duplicates
@@ -131,19 +123,16 @@
             
             markers.forEach(marker => {
                 const personId = marker.options.personId;
-                const eventType = marker.options.eventType;
                 const victimCategories = marker.options.victimCategories || [];
                 
                 if (!personsMap.has(personId)) {
                     personsMap.set(personId, {
                         properties: marker.options.properties,
-                        eventTypes: new Set(),
                         victimCategories: new Set()
                     });
                 }
                 
                 const person = personsMap.get(personId);
-                person.eventTypes.add(eventType);
                 victimCategories.forEach(cat => person.victimCategories.add(cat));
             });
             
@@ -170,7 +159,7 @@
 
         state.vocab = state.geojsonData.vocab;
         
-        // Build event type lookups
+        // Build event type lookups (kept for tag classification)
         state.eventTypeKeys = new Set(Object.keys(state.vocab.event_types || {}));
         console.log('Event types from vocab:', Array.from(state.eventTypeKeys));
         
@@ -178,12 +167,8 @@
         state.victimCategoryKeys = new Set(Object.keys(state.vocab.victim_category_types || {}));
         console.log('Victim category types from vocab:', Array.from(state.victimCategoryKeys));
         
-        // Initialize active filters with all event types (including unknown)
-        state.activeEventTypes = new Set([...state.eventTypeKeys, 'unknown']);
-        
-        // Log colors for verification
-        console.log('Event type colors loaded from vocab');
-        console.log('Victim category colors loaded from vocab');
+        // Log target event type
+        console.log(`Target event type: "${CONFIG.targetEventType}" → "${getEventTypeLabel(CONFIG.targetEventType)}"`);
     }
 
     // ===== Tag Classification & Validation =====
@@ -220,10 +205,17 @@
             } else if (classified.type === 'victim_category') {
                 victimCategories.push(classified.key);
             }
-            // Unknown tags are logged but not added to results
         });
 
         return { eventTypes, victimCategories };
+    }
+
+    /**
+     * Check if an event's tags include the target event type (voluntary_residence)
+     */
+    function isTargetEvent(tags) {
+        if (!tags || !Array.isArray(tags)) return false;
+        return tags.includes(CONFIG.targetEventType);
     }
 
     // ===== Load and Process Data =====
@@ -241,14 +233,13 @@
             // Process vocabulary FIRST
             processVocabulary();
             
-            // Extract all victim categories from actual data
+            // Extract victim categories (only from voluntary_residence events)
             extractVictimCategories();
             
-            // Create point markers
+            // Create point markers (only voluntary_residence)
             createPointMarkers();
             
-            // Setup UI
-            setupEventTypeFilters();
+            // Setup UI (victim categories only - no event type filters)
             setupVictimCategoryFilters();
             
             // Initial render
@@ -270,6 +261,7 @@
     }
 
     // ===== Extract Unique Victim Categories =====
+    // Only considers voluntary_residence events
     function extractVictimCategories() {
         state.allVictimCategories.clear();
         state.activeVictimCategories.clear();
@@ -277,9 +269,10 @@
         state.geojsonData.features.forEach(feature => {
             const props = feature.properties;
             
-            // Handle aggregated features
             if (props.events && Array.isArray(props.events)) {
+                // Aggregated features - only process voluntary_residence events
                 props.events.forEach(event => {
+                    if (!isTargetEvent(event.tags)) return;
                     const parsed = parseTags(event.tags);
                     parsed.victimCategories.forEach(cat => {
                         state.allVictimCategories.add(cat);
@@ -287,7 +280,8 @@
                     });
                 });
             } else {
-                // Handle single person features
+                // Single person features - only process if voluntary_residence
+                if (!isTargetEvent(props.tags)) return;
                 const parsed = parseTags(props.tags);
                 parsed.victimCategories.forEach(cat => {
                     state.allVictimCategories.add(cat);
@@ -296,10 +290,11 @@
             }
         });
         
-        console.log('Found victim categories in data:', Array.from(state.allVictimCategories));
+        console.log('Found victim categories in voluntary_residence data:', Array.from(state.allVictimCategories));
     }
 
     // ===== Create Point Markers =====
+    // Only creates markers for voluntary_residence events
     function createPointMarkers() {
         state.allPointMarkers = [];
         
@@ -309,81 +304,63 @@
             
             if (!coords || coords.length !== 2) return;
             
-            // Handle aggregated features (with events array) - create marker for EACH event
             if (props.events && Array.isArray(props.events)) {
+                // Aggregated features - create marker only for voluntary_residence events
                 props.events.forEach(event => {
+                    if (!isTargetEvent(event.tags)) return;
+                    
                     const parsed = parseTags(event.tags);
-                    
-                    // Ensure at least one event type
-                    const eventTypes = parsed.eventTypes.length > 0 ? parsed.eventTypes : ['unknown'];
-                    
-                    // Ensure at least one victim category
                     const victimCategories = parsed.victimCategories.length > 0 ? 
                         parsed.victimCategories : ['unknown'];
                     
-                    // Create a marker for each event type
-                    eventTypes.forEach(eventType => {
-                        // Get color from FIRST victim category
-                        const primaryVictimCategory = victimCategories[0];
-                        const color = getVictimCategoryColor(primaryVictimCategory);
-                        
-                        const marker = L.marker([coords[1], coords[0]], {
-                            icon: createPointIcon(eventType, color)
-                        });
-                        
-                        // Store metadata on marker
-                        marker.options.personId = event.person_id;
-                        marker.options.eventType = eventType;
-                        marker.options.victimCategories = victimCategories;
-                        marker.options.properties = event;
-                        
-                        // Bind popup
-                        marker.bindPopup(createPointPopupContent(event, eventType));
-                        
-                        state.allPointMarkers.push({
-                            marker: marker,
-                            eventType: eventType,
-                            victimCategories: victimCategories
-                        });
-                    });
-                });
-            } else {
-                // Handle single person features
-                const parsed = parseTags(props.tags);
-                
-                // Ensure at least one event type
-                const eventTypes = parsed.eventTypes.length > 0 ? parsed.eventTypes : ['unknown'];
-                
-                // Ensure at least one victim category
-                const victimCategories = parsed.victimCategories.length > 0 ? 
-                    parsed.victimCategories : ['unknown'];
-                
-                eventTypes.forEach(eventType => {
-                    // Get color from FIRST victim category
+                    // Get color from first victim category
                     const primaryVictimCategory = victimCategories[0];
                     const color = getVictimCategoryColor(primaryVictimCategory);
                     
                     const marker = L.marker([coords[1], coords[0]], {
-                        icon: createPointIcon(eventType, color)
+                        icon: createPointIcon(color)
                     });
                     
-                    marker.options.personId = props.person_id;
-                    marker.options.eventType = eventType;
+                    marker.options.personId = event.person_id;
                     marker.options.victimCategories = victimCategories;
-                    marker.options.properties = props;
+                    marker.options.properties = event;
                     
-                    marker.bindPopup(createPointPopupContent(props, eventType));
+                    marker.bindPopup(createPointPopupContent(event));
                     
                     state.allPointMarkers.push({
                         marker: marker,
-                        eventType: eventType,
                         victimCategories: victimCategories
                     });
+                });
+            } else {
+                // Single person features - only process if voluntary_residence
+                if (!isTargetEvent(props.tags)) return;
+                
+                const parsed = parseTags(props.tags);
+                const victimCategories = parsed.victimCategories.length > 0 ? 
+                    parsed.victimCategories : ['unknown'];
+                
+                const primaryVictimCategory = victimCategories[0];
+                const color = getVictimCategoryColor(primaryVictimCategory);
+                
+                const marker = L.marker([coords[1], coords[0]], {
+                    icon: createPointIcon(color)
+                });
+                
+                marker.options.personId = props.person_id;
+                marker.options.victimCategories = victimCategories;
+                marker.options.properties = props;
+                
+                marker.bindPopup(createPointPopupContent(props));
+                
+                state.allPointMarkers.push({
+                    marker: marker,
+                    victimCategories: victimCategories
                 });
             }
         });
         
-        console.log(`Created ${state.allPointMarkers.length} point markers`);
+        console.log(`Created ${state.allPointMarkers.length} voluntary_residence markers`);
     }
 
     // ===== Render Markers =====
@@ -391,16 +368,12 @@
         state.markerCluster.clearLayers();
         
         const filteredMarkers = state.allPointMarkers.filter(item => {
-            // Check event type
-            if (!state.activeEventTypes.has(item.eventType)) return false;
-            
-            // Check victim category - keep visible if ANY active category matches
+            // Only filter by victim category
             if (state.activeVictimCategories.size === 0) return true;
-            
             return item.victimCategories.some(cat => state.activeVictimCategories.has(cat));
         });
         
-        console.log(`Rendering ${filteredMarkers.length} point markers`);
+        console.log(`Rendering ${filteredMarkers.length} markers`);
         
         filteredMarkers.forEach(item => {
             state.markerCluster.addLayer(item.marker);
@@ -413,84 +386,39 @@
     }
 
     // ===== Create Icons =====
-    function createPointIcon(eventType, color) {
-        const shape = getEventTypeShape(eventType);
-        let svgIcon = '';
-        
-        // Different SVG shapes based on event type
-        switch (shape) {
-            case 'circle':
-                svgIcon = `
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="8" fill="${color}" stroke="#fff" stroke-width="2"/>
-                    </svg>
-                `;
-                break;
-            case 'square':
-                svgIcon = `
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <rect x="4" y="4" width="16" height="16" fill="${color}" stroke="#fff" stroke-width="2"/>
-                    </svg>
-                `;
-                break;
-            case 'diamond':
-                svgIcon = `
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <path d="M12 4 L20 12 L12 20 L4 12 Z" fill="${color}" stroke="#fff" stroke-width="2"/>
-                    </svg>
-                `;
-                break;
-            case 'triangle':
-                svgIcon = `
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <path d="M12 4 L20 20 L4 20 Z" fill="${color}" stroke="#fff" stroke-width="2"/>
-                    </svg>
-                `;
-                break;
-            case 'cross':
-                svgIcon = `
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <path d="M12 2 L12 10 L20 10 L20 14 L12 14 L12 22 L8 22 L8 14 L0 14 L0 10 L8 10 L8 2 Z" 
-                              fill="${color}" stroke="#fff" stroke-width="1.5" transform="translate(2, 1)"/>
-                    </svg>
-                `;
-                break;
-            case 'hexagon':
-                svgIcon = `
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <path d="M12 2 L20 7 L20 17 L12 22 L4 17 L4 7 Z" fill="${color}" stroke="#fff" stroke-width="2"/>
-                    </svg>
-                `;
-                break;
-            default:
-                svgIcon = `
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="8" fill="${color}" stroke="#fff" stroke-width="2"/>
-                    </svg>
-                `;
-        }
+    // All markers are circles (voluntary_residence shape) colored by victim category
+    function createPointIcon(color) {
+        const svgIcon = `
+            <svg width="24" height="24" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="8" fill="${color}" stroke="#fff" stroke-width="2"/>
+            </svg>
+        `;
         
         return L.divIcon({
             html: svgIcon,
-            className: `custom-marker marker-${eventType}`,
+            className: 'custom-marker',
             iconSize: [24, 24],
             iconAnchor: [12, 12],
             popupAnchor: [0, -12]
         });
     }
 
+    // ===== Cluster Icon =====
+    // Now shows victim category distribution as donut chart
     function createClusterIcon(cluster) {
         const markers = cluster.getAllChildMarkers();
         const count = markers.length;
         
-        // Count events by type
-        const eventTypeCounts = {};
+        // Count by victim category
+        const categoryCounts = {};
         markers.forEach(marker => {
-            const eventType = marker.options.eventType || 'unknown';
-            eventTypeCounts[eventType] = (eventTypeCounts[eventType] || 0) + 1;
+            const categories = marker.options.victimCategories || ['unknown'];
+            // Use primary (first) category for cluster visualization
+            const primary = categories[0];
+            categoryCounts[primary] = (categoryCounts[primary] || 0) + 1;
         });
         
-        // Determine size class
+        // Determine size
         let size = 'small';
         let diameter = 40;
         if (count > 100) {
@@ -501,36 +429,32 @@
             diameter = 50;
         }
         
-        // Generate SVG pie chart
-        const svg = createPieChartSVG(eventTypeCounts, diameter, count);
+        // Generate SVG
+        const svg = createCategoryPieChartSVG(categoryCounts, diameter, count);
         
         return L.divIcon({
             html: svg,
-            className: `marker-cluster marker-cluster-${size} marker-cluster-eventtype`,
+            className: `marker-cluster marker-cluster-${size} marker-cluster-category`,
             iconSize: L.point(diameter, diameter)
         });
     }
     
     /**
-     * Create SVG pie chart showing event type distribution
+     * Create SVG pie/donut chart showing victim category distribution
      */
-    function createPieChartSVG(eventTypeCounts, diameter, totalCount) {
+    function createCategoryPieChartSVG(categoryCounts, diameter, totalCount) {
         const radius = diameter / 2;
+        const total = Object.values(categoryCounts).reduce((sum, val) => sum + val, 0);
+        const categoryCount = Object.keys(categoryCounts).length;
         
-        // Calculate total and percentages
-        const total = Object.values(eventTypeCounts).reduce((sum, val) => sum + val, 0);
-        const eventTypeCount = Object.keys(eventTypeCounts).length;
-        
-        // If only one event type, show as solid circle (not donut) with event type color
-        if (eventTypeCount === 1) {
-            const eventType = Object.keys(eventTypeCounts)[0];
-            const color = getEventTypeColor(eventType);
+        // If only one category, show as solid circle
+        if (categoryCount === 1) {
+            const category = Object.keys(categoryCounts)[0];
+            const color = getVictimCategoryColor(category);
             
-            const svg = `
+            return `
                 <svg width="${diameter}" height="${diameter}" viewBox="0 0 ${diameter} ${diameter}">
-                    <!-- Solid circle for single event type -->
                     <circle cx="${radius}" cy="${radius}" r="${radius - 2}" fill="${color}" stroke="white" stroke-width="2"/>
-                    <!-- Count text -->
                     <text x="${radius}" y="${radius}" 
                           text-anchor="middle" 
                           dominant-baseline="central" 
@@ -539,42 +463,38 @@
                     </text>
                 </svg>
             `;
-            return svg;
         }
         
-        // Multiple event types - use donut style
-        const innerRadius = radius * 0.65; // Larger inner circle to ensure text has comfortable padding
+        // Multiple categories - donut style
+        const innerRadius = radius * 0.65;
         
-        // Sort by priority (death first, then others)
-        const eventTypePriority = ['death', 'imprisonment', 'forced_residence', 'flight', 'voluntary_residence', 'unknown'];
-        const sortedTypes = Object.keys(eventTypeCounts).sort((a, b) => {
-            return eventTypePriority.indexOf(a) - eventTypePriority.indexOf(b);
+        // Sort alphabetically by label for consistent ordering
+        const sortedCategories = Object.keys(categoryCounts).sort((a, b) => {
+            return getVictimCategoryLabel(a).localeCompare(getVictimCategoryLabel(b), 'de');
         });
         
         // Generate pie slices
         let cumulativePercent = 0;
         let pathsHTML = '';
         
-        sortedTypes.forEach(eventType => {
-            const value = eventTypeCounts[eventType];
+        sortedCategories.forEach(category => {
+            const value = categoryCounts[category];
             const percent = value / total;
             
             if (percent > 0) {
                 const startAngle = cumulativePercent * 2 * Math.PI;
                 const endAngle = (cumulativePercent + percent) * 2 * Math.PI;
                 
-                const color = getEventTypeColor(eventType);
+                const color = getVictimCategoryColor(category);
                 pathsHTML += createArcPath(radius, innerRadius, startAngle, endAngle, color);
                 
                 cumulativePercent += percent;
             }
         });
         
-        const svg = `
+        return `
             <svg width="${diameter}" height="${diameter}" viewBox="0 0 ${diameter} ${diameter}">
-                <!-- Pie slices -->
                 ${pathsHTML}
-                <!-- Center circle with count -->
                 <circle cx="${radius}" cy="${radius}" r="${innerRadius - 1}" fill="white" stroke="#1a1a1a" stroke-width="2"/>
                 <text x="${radius}" y="${radius}" 
                       text-anchor="middle" 
@@ -584,15 +504,12 @@
                 </text>
             </svg>
         `;
-        
-        return svg;
     }
     
     /**
      * Create SVG arc path for pie chart slice
      */
     function createArcPath(outerRadius, innerRadius, startAngle, endAngle, color) {
-        // Convert angles to coordinates
         const x1 = outerRadius + outerRadius * Math.cos(startAngle - Math.PI / 2);
         const y1 = outerRadius + outerRadius * Math.sin(startAngle - Math.PI / 2);
         const x2 = outerRadius + outerRadius * Math.cos(endAngle - Math.PI / 2);
@@ -617,51 +534,41 @@
     }
 
     // ===== Popup Content =====
+    
     function createClusterPopupContent(personsMap, latlng) {
         const personsArray = Array.from(personsMap.values());
         const personCount = personsArray.length;
         
-        // Check if all events are at the exact same location (same place_name)
-        // If they are, we can show the place name. If not, it's a computed cluster.
+        // Check if all events are at the exact same location
         const allPlaceNames = personsArray.map(p => p.properties?.place_name).filter(Boolean);
         const uniquePlaceNames = [...new Set(allPlaceNames)];
         const isSameLocation = uniquePlaceNames.length === 1;
         const placeName = isSameLocation ? uniquePlaceNames[0] : null;
         
-        // Count total events
-        let totalEvents = 0;
-        personsArray.forEach(person => {
-            totalEvents += person.eventTypes.size;
-        });
-        
         let html = '<div class="popup-content cluster-popup-content">';
         
-        // Header with summary
+        // Header
         html += '<div class="popup-header">';
         
-        // Only show place name if all events are at the same location
         if (placeName) {
             html += `<div class="popup-name" style="font-size: 1.1rem;">${escapeHtml(placeName)}</div>`;
         } else {
-            // For computed clusters, show a generic title
-            html += `<div class="popup-name" style="font-size: 1.1rem;">Ereignis-Cluster</div>`;
-            html += `<div class="popup-note" style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">Mehrere Orte in diesem Bereich</div>`;
+            html += `<div class="popup-name" style="font-size: 1.1rem;">Wohnadressen-Cluster</div>`;
+            html += `<div class="popup-note">Mehrere Adressen in diesem Bereich</div>`;
         }
         
         html += `<div class="popup-summary" style="margin-top: 0.5rem; padding: 0.5rem; background: #f5f5f0; border-left: 4px solid #1a1a1a;">`;
-        html += `<strong>${personCount}</strong> Person${personCount !== 1 ? 'en' : ''} • `;
-        html += `<strong>${totalEvents}</strong> Ereignis${totalEvents !== 1 ? 'se' : ''}`;
+        html += `<strong>${personCount}</strong> Person${personCount !== 1 ? 'en' : ''}`;
         html += `</div>`;
         html += '</div>';
         
-        // Persons list - compact and scrollable
+        // Persons list
         html += '<div class="popup-section">';
         
-        // Adapt label based on whether it's same location or computed cluster
         if (isSameLocation) {
-            html += '<div class="popup-label">Personen an diesem Ort</div>';
+            html += '<div class="popup-label">Personen an dieser Adresse</div>';
         } else {
-            html += '<div class="popup-label">Personen in diesem Cluster</div>';
+            html += '<div class="popup-label">Personen in diesem Bereich</div>';
         }
         
         html += '<div class="persons-list">';
@@ -680,12 +587,7 @@
             const deathYear = props.death_date ? props.death_date.split('.').pop() : '?';
             const gamsLink = props.gams_link || '';
             
-            // Event types for this person
-            const eventTypesList = Array.from(person.eventTypes)
-                .map(type => getEventTypeLabel(type))
-                .join(', ');
-            
-            // Victim categories (use vocab labels)
+            // Victim categories
             const victimCats = Array.from(person.victimCategories)
                 .map(cat => getVictimCategoryLabel(cat))
                 .join(', ');
@@ -704,16 +606,14 @@
             html += ` <span class="person-years">(${birthYear}–${deathYear})</span>`;
             html += `</div>`;
             
-            html += `<div class="person-details">`;
-            html += `<span class="detail-item">${escapeHtml(eventTypesList)}</span>`;
             if (victimCats) {
-                html += ` • <span class="detail-item victim-cat">${escapeHtml(victimCats)}</span>`;
+                html += `<div class="person-details">`;
+                html += `<span class="detail-item victim-cat">${escapeHtml(victimCats)}</span>`;
+                html += `</div>`;
             }
-            html += `</div>`;
             
             html += '</div>';
             
-            // Add separator between persons (except last)
             if (index < personsArray.length - 1) {
                 html += '<div class="person-separator"></div>';
             }
@@ -726,11 +626,10 @@
         return html;
     }
 
-    function createPointPopupContent(props, eventType) {
+    function createPointPopupContent(props) {
         const name = props.person_name || 'Unbekannt';
-        const eventTypeLabel = getEventTypeLabel(eventType);
         const placeName = props.place_name || 'Unbekannt';
-        const date = props.date || 'Datum unbekannt';
+        const date = props.date || null;
         const birthDate = props.birth_date || 'Unbekannt';
         const deathDate = props.death_date || '';
         const gamsLink = props.gams_link || '';
@@ -742,13 +641,13 @@
         
         html += '<div class="popup-header">';
         html += `<div class="popup-name">${escapeHtml(name)}</div>`;
-        html += `<div class="popup-event-type">${escapeHtml(eventTypeLabel)}</div>`;
+        html += `<div class="popup-event-type">Letzte Freiwillige Wohnadresse</div>`;
         html += '</div>';
 
         html += '<div class="popup-section">';
-        html += '<div class="popup-label">Ort</div>';
+        html += '<div class="popup-label">Adresse</div>';
         html += `<div class="popup-value">${escapeHtml(placeName)}</div>`;
-        if (date !== 'Datum unbekannt') {
+        if (date) {
             html += `<div class="popup-value" style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">${escapeHtml(date)}</div>`;
         }
         html += '</div>';
@@ -786,12 +685,12 @@
         document.getElementById('total-persons').textContent = 
             (metadata.total_persons || 0).toLocaleString('de-DE');
         
+        // Show total voluntary_residence markers (not all events)
         document.getElementById('total-events').textContent = 
-            (metadata.total_location_events || 0).toLocaleString('de-DE');
+            state.allPointMarkers.length.toLocaleString('de-DE');
         
-        // Calculate visible events
+        // Calculate visible (after victim category filtering)
         const visibleCount = state.allPointMarkers.filter(item => {
-            if (!state.activeEventTypes.has(item.eventType)) return false;
             if (state.activeVictimCategories.size === 0) return true;
             return item.victimCategories.some(cat => state.activeVictimCategories.has(cat));
         }).length;
@@ -799,76 +698,14 @@
         document.getElementById('visible-events').textContent = visibleCount.toLocaleString('de-DE');
     }
 
-    // ===== Event Type Filters UI Setup =====
-    function setupEventTypeFilters() {
-        const container = document.getElementById('event-type-filters');
-        if (!container) {
-            console.warn('Event type filters container not found');
-            return;
-        }
-        
-        // Clear existing content
-        container.innerHTML = '';
-        
-        // Create filters from vocab
-        state.eventTypeKeys.forEach(key => {
-            const label = getEventTypeLabel(key);
-            const shape = getEventTypeShape(key);
-            const sampleColor = '#666';
-            
-            const labelEl = document.createElement('label');
-            labelEl.className = 'filter-checkbox';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = true;
-            checkbox.dataset.eventType = key;
-            
-            checkbox.addEventListener('change', (e) => {
-                toggleEventTypeFilter(key, e.target.checked);
-            });
-            
-            const span = document.createElement('span');
-            span.className = 'filter-label';
-            span.innerHTML = `${getShapeIcon(shape, sampleColor)} ${escapeHtml(label)}`;
-            
-            labelEl.appendChild(checkbox);
-            labelEl.appendChild(span);
-            container.appendChild(labelEl);
-        });
-        
-        // Add unknown event type filter
-        const labelEl = document.createElement('label');
-        labelEl.className = 'filter-checkbox';
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = true;
-        checkbox.dataset.eventType = 'unknown';
-        
-        checkbox.addEventListener('change', (e) => {
-            toggleEventTypeFilter('unknown', e.target.checked);
-        });
-        
-        const span = document.createElement('span');
-        span.className = 'filter-label';
-        span.innerHTML = `${getShapeIcon('hexagon', '#999')} Unbekannt`;
-        
-        labelEl.appendChild(checkbox);
-        labelEl.appendChild(span);
-        container.appendChild(labelEl);
-    }
-
     // ===== Victim Category Filters UI Setup =====
     function setupVictimCategoryFilters() {
         const container = document.getElementById('victim-category-filters');
         if (!container) return;
         
-        // Clear existing
         container.innerHTML = '';
         
-        // Show ALL categories from vocab (not just those in data)
-        // Sort alphabetically by label
+        // Show ALL categories from vocab (sorted alphabetically)
         const sortedCategories = Array.from(state.victimCategoryKeys).sort((a, b) => {
             return getVictimCategoryLabel(a).localeCompare(getVictimCategoryLabel(b), 'de');
         });
@@ -905,17 +742,7 @@
         });
     }
 
-    // ===== Filter Toggle Functions =====
-    function toggleEventTypeFilter(eventType, isChecked) {
-        if (isChecked) {
-            state.activeEventTypes.add(eventType);
-        } else {
-            state.activeEventTypes.delete(eventType);
-        }
-        renderMarkers();
-        updateStatistics();
-    }
-
+    // ===== Filter Toggle =====
     function toggleVictimCategoryFilter(category, isChecked) {
         if (isChecked) {
             state.activeVictimCategories.add(category);
@@ -933,33 +760,8 @@
         legend.onAdd = function() {
             const div = L.DomUtil.create('div', 'map-legend');
 
-            // Event types legend (shapes)
-            div.innerHTML = '<div class="legend-title">Ereignistypen (Formen)</div>';
-            
-            // Add all event types from vocab
-            state.eventTypeKeys.forEach(key => {
-                const label = getEventTypeLabel(key);
-                const shape = getEventTypeShape(key);
-                const sampleColor = '#666'; // Neutral color for shape demo
-                
-                div.innerHTML += `
-                    <div class="legend-item">
-                        <span class="legend-shape">${getShapeIcon(shape, sampleColor)}</span>
-                        <span>${escapeHtml(label)}</span>
-                    </div>
-                `;
-            });
-            
-            // Add unknown event type
-            div.innerHTML += `
-                <div class="legend-item">
-                    <span class="legend-shape">${getShapeIcon('hexagon', '#999')}</span>
-                    <span>Unbekannt</span>
-                </div>
-            `;
-            
-            // Victim categories legend (colors)
-            div.innerHTML += '<div class="legend-title" style="margin-top: 1rem;">Opferkategorien (Farben)</div>';
+            // Only victim categories legend (colors)
+            div.innerHTML = '<div class="legend-title">Opferkategorien</div>';
             
             // Show ALL categories from vocab (sorted alphabetically)
             Array.from(state.victimCategoryKeys).sort((a, b) => {
@@ -980,33 +782,6 @@
         };
         
         legend.addTo(state.map);
-    }
-
-    function getShapeIcon(shape, color) {
-        let svg = '';
-        switch (shape) {
-            case 'circle':
-                svg = `<svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="${color}" stroke="#fff" stroke-width="2"/></svg>`;
-                break;
-            case 'square':
-                svg = `<svg width="16" height="16" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" fill="${color}" stroke="#fff" stroke-width="2"/></svg>`;
-                break;
-            case 'diamond':
-                svg = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 4 L20 12 L12 20 L4 12 Z" fill="${color}" stroke="#fff" stroke-width="2"/></svg>`;
-                break;
-            case 'triangle':
-                svg = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 4 L20 20 L4 20 Z" fill="${color}" stroke="#fff" stroke-width="2"/></svg>`;
-                break;
-            case 'cross':
-                svg = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2 L12 10 L20 10 L20 14 L12 14 L12 22 L8 22 L8 14 L0 14 L0 10 L8 10 L8 2 Z" fill="${color}" stroke="#fff" stroke-width="1.5" transform="translate(2, 1)"/></svg>`;
-                break;
-            case 'hexagon':
-                svg = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2 L20 7 L20 17 L12 22 L4 17 L4 7 Z" fill="${color}" stroke="#fff" stroke-width="2"/></svg>`;
-                break;
-            default:
-                svg = `<svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="${color}" stroke="#fff" stroke-width="2"/></svg>`;
-        }
-        return svg;
     }
 
     // ===== Initialize =====
