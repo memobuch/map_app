@@ -1,16 +1,24 @@
 // ===================================
 // MEMO Enhanced Map - JavaScript
-// Version 6.0.0 - Voluntary Residence Focus
-// Only shows "Letzte Freiwillige Wohnadresse" events
-// Filters by Opferkategorien only
+// Version 7.0.0 - Environment-Aware Configuration
+// Called via MEMO.initMap({ geoJsonUrl, personBaseUrl })
 // ===================================
 
-(function() {
+var MEMO = MEMO || {};
+
+MEMO.initMap = function(options) {
     'use strict';
+
+    // ===== Validate Required Options =====
+    if (!options || !options.geoJsonUrl) {
+        console.error('MEMO.initMap: "geoJsonUrl" is required. Usage: MEMO.initMap({ geoJsonUrl: "...", personBaseUrl: "..." })');
+        return;
+    }
 
     // ===== Configuration =====
     const CONFIG = {
-        geojsonFile: '/memo/static/apps/map/EVENTS.json',
+        geoJsonUrl: options.geoJsonUrl,
+        personBaseUrl: options.personBaseUrl || null, // e.g. 'http://localhost:18090/pub/memo/objects'
         mapCenter: [47.0707, 15.4395],
         mapZoom: 13,
         minZoom: 1,
@@ -18,6 +26,11 @@
         // The single event type we display
         targetEventType: 'voluntary_residence'
     };
+
+    console.log('MEMO.initMap called with:', {
+        geoJsonUrl: CONFIG.geoJsonUrl,
+        personBaseUrl: CONFIG.personBaseUrl || '(not set — person links disabled)'
+    });
 
     // ===== State =====
     const state = {
@@ -48,7 +61,19 @@
         allPointMarkers: []
     };
 
-    // ===== Utility Functions for Vocab Access =====
+    // ===== Utility Functions =====
+
+    /**
+     * Build a full URL to a person's page.
+     * Returns null if personBaseUrl is not configured.
+     * Constructs: {personBaseUrl}/{personId}/
+     */
+    function buildPersonUrl(personId) {
+        if (!CONFIG.personBaseUrl || !personId) return null;
+        // Strip trailing slash from base, then build clean URL
+        const base = CONFIG.personBaseUrl.replace(/\/+$/, '');
+        return `${base}/${personId}/`;
+    }
     
     function getEventTypeLabel(type) {
         if (type === 'unknown') return 'Unbekannt';
@@ -83,7 +108,7 @@
 
     // ===== Initialization =====
     function init() {
-        console.log('Initializing MEMO Map (v6.0.0 - Voluntary Residence Focus)...');
+        console.log('Initializing MEMO Map (v7.0.0 - Environment-Aware)...');
         initializeMap();
         loadGeoJSONData();
     }
@@ -221,7 +246,7 @@
     // ===== Load and Process Data =====
     async function loadGeoJSONData() {
         try {
-            const response = await fetch(CONFIG.geojsonFile);
+            const response = await fetch(CONFIG.geoJsonUrl);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -310,8 +335,7 @@
                     if (!isTargetEvent(event.tags)) return;
                     
                     const parsed = parseTags(event.tags);
-                    const victimCategories = parsed.victimCategories.length > 0 ? 
-                        parsed.victimCategories : ['unknown'];
+                    const victimCategories = parsed.victimCategories.length > 0 ? parsed.victimCategories : ['unknown'];
                     
                     // Get color from first victim category
                     const primaryVictimCategory = victimCategories[0];
@@ -337,8 +361,7 @@
                 if (!isTargetEvent(props.tags)) return;
                 
                 const parsed = parseTags(props.tags);
-                const victimCategories = parsed.victimCategories.length > 0 ? 
-                    parsed.victimCategories : ['unknown'];
+                const victimCategories = parsed.victimCategories.length > 0 ? parsed.victimCategories : ['unknown'];
                 
                 const primaryVictimCategory = victimCategories[0];
                 const color = getVictimCategoryColor(primaryVictimCategory);
@@ -404,7 +427,7 @@
     }
 
     // ===== Cluster Icon =====
-    // Now shows victim category distribution as donut chart
+    // Shows victim category distribution as donut chart
     function createClusterIcon(cluster) {
         const markers = cluster.getAllChildMarkers();
         const count = markers.length;
@@ -444,42 +467,34 @@
      */
     function createCategoryPieChartSVG(categoryCounts, diameter, totalCount) {
         const radius = diameter / 2;
-        const total = Object.values(categoryCounts).reduce((sum, val) => sum + val, 0);
-        const categoryCount = Object.keys(categoryCounts).length;
+        const innerRadius = radius * 0.55;
         
-        // If only one category, show as solid circle
-        if (categoryCount === 1) {
-            const category = Object.keys(categoryCounts)[0];
-            const color = getVictimCategoryColor(category);
-            
+        const categories = Object.keys(categoryCounts);
+        
+        // Single category = full circle
+        if (categories.length === 1) {
+            const color = getVictimCategoryColor(categories[0]);
             return `
                 <svg width="${diameter}" height="${diameter}" viewBox="0 0 ${diameter} ${diameter}">
-                    <circle cx="${radius}" cy="${radius}" r="${radius - 2}" fill="${color}" stroke="white" stroke-width="2"/>
+                    <circle cx="${radius}" cy="${radius}" r="${radius}" fill="${color}" stroke="white" stroke-width="2"/>
+                    <circle cx="${radius}" cy="${radius}" r="${innerRadius - 1}" fill="white" stroke="#1a1a1a" stroke-width="2"/>
                     <text x="${radius}" y="${radius}" 
                           text-anchor="middle" 
                           dominant-baseline="central" 
-                          style="font-size: ${diameter * 0.35}px; font-weight: 700; font-family: 'Courier New', monospace; fill: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                          style="font-size: ${diameter * 0.28}px; font-weight: 700; font-family: 'Courier New', monospace; fill: #1a1a1a;">
                         ${totalCount}
                     </text>
                 </svg>
             `;
         }
         
-        // Multiple categories - donut style
-        const innerRadius = radius * 0.65;
-        
-        // Sort alphabetically by label for consistent ordering
-        const sortedCategories = Object.keys(categoryCounts).sort((a, b) => {
-            return getVictimCategoryLabel(a).localeCompare(getVictimCategoryLabel(b), 'de');
-        });
-        
-        // Generate pie slices
+        // Multiple categories = donut chart
         let cumulativePercent = 0;
         let pathsHTML = '';
         
-        sortedCategories.forEach(category => {
-            const value = categoryCounts[category];
-            const percent = value / total;
+        categories.forEach(category => {
+            const count = categoryCounts[category];
+            const percent = count / totalCount;
             
             if (percent > 0) {
                 const startAngle = cumulativePercent * 2 * Math.PI;
@@ -585,7 +600,7 @@
             const name = props.person_name || 'Unbekannt';
             const birthYear = props.birth_date ? props.birth_date.split('.').pop() : '?';
             const deathYear = props.death_date ? props.death_date.split('.').pop() : '?';
-            const gamsLink = props.gams_link || '';
+            const personUrl = buildPersonUrl(props.person_id);
             
             // Victim categories
             const victimCats = Array.from(person.victimCategories)
@@ -595,8 +610,8 @@
             html += '<div class="person-item">';
             html += `<div class="person-name">`;
             
-            if (gamsLink) {
-                html += `<a href="${escapeHtml(gamsLink)}" target="_blank" rel="noopener" class="person-link">`;
+            if (personUrl) {
+                html += `<a href="${escapeHtml(personUrl)}" target="_blank" rel="noopener" class="person-link">`;
                 html += `${escapeHtml(name)}`;
                 html += `</a>`;
             } else {
@@ -632,7 +647,7 @@
         const date = props.date || null;
         const birthDate = props.birth_date || 'Unbekannt';
         const deathDate = props.death_date || '';
-        const gamsLink = props.gams_link || '';
+        const personUrl = buildPersonUrl(props.person_id);
         
         // Parse victim categories from tags
         const parsed = parseTags(props.tags);
@@ -640,7 +655,11 @@
         let html = '<div class="popup-content">';
         
         html += '<div class="popup-header">';
-        html += `<div class="popup-name">${escapeHtml(name)}</div>`;
+        if (personUrl) {
+            html += `<a href="${escapeHtml(personUrl)}" target="_blank" rel="noopener" class="popup-name-link"><div class="popup-name">${escapeHtml(name)}</div></a>`;
+        } else {
+            html += `<div class="popup-name">${escapeHtml(name)}</div>`;
+        }
         html += `<div class="popup-event-type">Letzte Freiwillige Wohnadresse</div>`;
         html += '</div>';
 
@@ -668,8 +687,8 @@
             html += '</div>';
         }
 
-        if (gamsLink) {
-            html += `<a href="${escapeHtml(gamsLink)}" target="_blank" rel="noopener" class="popup-link">Mehr erfahren →</a>`;
+        if (personUrl) {
+            html += `<a href="${escapeHtml(personUrl)}" target="_blank" rel="noopener" class="popup-link">Mehr erfahren →</a>`;
         }
 
         html += '</div>';
@@ -784,11 +803,6 @@
         legend.addTo(state.map);
     }
 
-    // ===== Initialize =====
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-
-})();
+    // ===== Start =====
+    init();
+};

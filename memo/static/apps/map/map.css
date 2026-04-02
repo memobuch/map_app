@@ -1,6 +1,6 @@
 /* ===================================
    MEMO Enhanced Map - CSS
-   Version 6.0 - Voluntary Residence Focus
+   Version 7.0 - Environment-Aware Configuration
    =================================== */
 
 * {
@@ -225,6 +225,17 @@ body {
     font-weight: 700;
     color: #1a1a1a;
     margin-bottom: 0.25rem;
+}
+
+/* Clickable person name in point popup header */
+.popup-name-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.popup-name-link:hover .popup-name {
+    text-decoration: underline;
+    color: #333;
 }
 
 .popup-event-type {

@@ -82,7 +82,15 @@
     <!-- Leaflet MarkerCluster JS -->
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     
-    <!-- Custom JS -->
+    <!-- MEMO Map Module (no longer self-invoking) -->
     <script src="/memo/static/apps/map/map.js"></script>
+    
+    <!-- Initialize with environment-specific configuration -->
+    <script>
+        MEMO.initMap({
+            geoJsonUrl: '/memo/static/apps/map/EVENTS.json',
+            personBaseUrl: 'http://localhost:18090/pub/memo/objects'
+        });
+    </script>
 </body>
 </html>
