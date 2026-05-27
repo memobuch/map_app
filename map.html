@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MEMO - Digitales Memobuch der Stadt Graz</title>
-    
+    <title>MEMOR - Digitales Memorbuch der Stadt Graz</title>
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+
     <!-- Leaflet MarkerCluster CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/memor/static/apps/map/map.css">
 </head>
@@ -20,8 +20,9 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <h1 class="title">Digitales Memobuch</h1>
-                <p class="subtitle">Letzte Freiwillige Wohnadressen der Opfer des Nationalsozialismus in Graz 1938–1945</p>
+                <h1 class="title">Digitales Memorbuch</h1>
+                <!-- Subtitle: populated by MEMOR.initMap (CONFIG.ui.subtitle) -->
+                <p class="subtitle" id="subtitle"></p>
                 <div class="divider"></div>
             </div>
         </header>
@@ -44,7 +45,8 @@
                         <span class="stat-value" id="total-persons">0</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Wohnadressen</span>
+                        <!-- Stat label: populated by MEMOR.initMap (CONFIG.ui.statLabel) -->
+                        <span class="stat-label" id="stat-label-events"></span>
                         <span class="stat-value" id="total-events">0</span>
                     </div>
                     <div class="stat-item">
@@ -61,14 +63,11 @@
         <!-- Info Panel -->
         <div class="info-panel">
             <div class="info-content">
-                <h3>Über das Projekt</h3>
-                <p>
-                    Diese Karte zeigt die letzten freiwilligen Wohnadressen von 691 Opfern des Nationalsozialismus 
-                    in Graz zwischen 1938 und 1945. Jeder Punkt repräsentiert den letzten selbstgewählten Wohnort 
-                    einer verfolgten Person, bevor Verfolgung, Vertreibung oder Deportation einsetzte.
-                </p>
+                <!-- Title + text populated by MEMOR.initMap (CONFIG.ui.infoTitle / infoText) -->
+                <h3 id="info-title"></h3>
+                <p id="info-text"></p>
                 <div class="info-link">
-                    <a href="https://gams.uni-graz.at/context:memo" target="_blank" rel="noopener">
+                    <a href="https://gams.uni-graz.at/context:memor" target="_blank" rel="noopener">
                         Weitere Informationen im GAMS
                     </a>
                 </div>
@@ -78,19 +77,68 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+
     <!-- Leaflet MarkerCluster JS -->
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    
-    <!-- MEMO Map Module (no longer self-invoking) -->
+
+    <!-- MEMOR Map Module -->
     <script src="/memor/static/apps/map/map.js"></script>
-    
-    <!-- Initialize with environment-specific configuration -->
+
+    <!--
+        Initialize with environment-specific configuration.
+
+        The "mode" option selects which event type is displayed:
+          - "voluntary-residence" → letzte freiwillige Wohnadressen (in Graz)
+          - "death"               → Sterbeorte (oft außerhalb von Graz, z. B. KZ Auschwitz, Tötungsanstalt Hartheim)
+
+        Any other key from EVENTS.json -> vocab.event_types is also valid
+        (forced-residence, imprisonment, flight) once needed.
+
+        infoText supports {eventCount} and {personCount} placeholders.
+    -->
     <script>
-        MEMO.initMap({
+        // ===== Voluntary residence mode (default) =====
+        MEMOR.initMap({
             geoJsonUrl: '/memor/static/apps/map/EVENTS.json',
-            personBaseUrl: 'http://localhost:18090/pub/memor/objects'
+            personBaseUrl: 'http://localhost:18090/pub/memor/objects',
+            mode: 'voluntary-residence',
+            mapCenter: [47.0707, 15.4395],
+            mapZoom: 13,
+            ui: {
+                subtitle: 'Letzte Freiwillige Wohnadressen der Opfer des Nationalsozialismus in Graz 1938–1945',
+                statLabel: 'Wohnadressen',
+                infoTitle: 'Über das Projekt',
+                infoText: 'Diese Karte zeigt die letzten freiwilligen Wohnadressen von {personCount} Opfern des Nationalsozialismus in Graz zwischen 1938 und 1945. Jeder Punkt repräsentiert den letzten selbstgewählten Wohnort einer verfolgten Person, bevor Verfolgung, Vertreibung oder Deportation einsetzte.',
+                clusterHeading: 'Wohnadressen-Cluster',
+                clusterMultiPlaceNote: 'Mehrere Adressen in diesem Bereich',
+                personsAtPlaceLabel: 'Personen an dieser Adresse',
+                personsInAreaLabel: 'Personen in diesem Bereich'
+            }
         });
+
+        // ===== Death mode (alternative configuration) =====
+        // To switch this page to death mode, comment out the call above and
+        // uncomment the block below. Map center/zoom widened because many
+        // death locations (Auschwitz, Hartheim, etc.) are far from Graz.
+        /*
+        MEMOR.initMap({
+            geoJsonUrl: '/memor/static/apps/map/EVENTS.json',
+            personBaseUrl: 'http://localhost:18090/pub/memor/objects',
+            mode: 'death',
+            mapCenter: [48.5, 16.5],
+            mapZoom: 5,
+            ui: {
+                subtitle: 'Sterbeorte der Opfer des Nationalsozialismus aus Graz 1938–1945',
+                statLabel: 'Sterbeorte',
+                infoTitle: 'Über das Projekt',
+                infoText: 'Diese Karte zeigt die Sterbeorte von {personCount} Opfern des Nationalsozialismus aus Graz. Jeder Punkt repräsentiert einen dokumentierten Sterbeort — viele davon liegen in Lagern und Tötungsanstalten weit außerhalb von Graz.',
+                clusterHeading: 'Sterbeorte-Cluster',
+                clusterMultiPlaceNote: 'Mehrere Sterbeorte in diesem Bereich',
+                personsAtPlaceLabel: 'Personen, die hier gestorben sind',
+                personsInAreaLabel: 'Personen, die in diesem Bereich gestorben sind'
+            }
+        });
+        */
     </script>
 </body>
 </html>
