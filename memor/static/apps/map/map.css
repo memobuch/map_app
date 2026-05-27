@@ -1,0 +1,513 @@
+/* ===================================
+   MEMO Enhanced Map - CSS
+   Version 7.0 - Environment-Aware Configuration
+   =================================== */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f5f5f0;
+    color: #1a1a1a;
+    line-height: 1.6;
+}
+
+/* ===== Header ===== */
+.header {
+    background-color: #1a1a1a;
+    color: #f5f5f0;
+    padding: 2rem 1.5rem;
+    border-bottom: 4px solid #666;
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.subtitle {
+    font-size: 1rem;
+    font-weight: 300;
+    opacity: 0.9;
+}
+
+/* ===== Controls Panel ===== */
+.controls-panel {
+    background-color: #fff;
+    border-bottom: 2px solid #1a1a1a;
+    padding: 1.5rem;
+}
+
+.controls-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 2rem;
+}
+
+.filter-section {
+    border-right: 1px solid #ddd;
+    padding-right: 2rem;
+}
+
+.filter-section:last-of-type {
+    border-right: none;
+}
+
+.filter-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+    color: #1a1a1a;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-checkbox:hover {
+    background-color: #f0f0f0;
+    border-color: #999;
+}
+
+.filter-checkbox input[type="checkbox"] {
+    margin-right: 0.75rem;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.filter-label {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    gap: 0.5rem;
+}
+
+.color-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+/* ===== Statistics Section ===== */
+.stats-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 200px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: #1a1a1a;
+    color: #f5f5f0;
+    border-left: 4px solid #666;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+}
+
+/* ===== Map Container ===== */
+.map-container {
+    height: 75vh;
+    min-height: 500px;
+    width: 100%;
+    border: 2px solid #1a1a1a;
+    box-shadow: inset 0 0 0 4px #f5f5f0;
+    position: relative;
+}
+
+/* ===== Map Legend ===== */
+.map-legend {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem;
+    border: 2px solid #1a1a1a;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.legend-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 0.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ===== Popups ===== */
+.leaflet-popup-content-wrapper {
+    border: 2px solid #1a1a1a;
+    border-radius: 0;
+}
+
+.leaflet-popup-content {
+    margin: 0;
+    font-family: inherit;
+}
+
+.popup-content {
+    padding: 1rem;
+    min-width: 280px;
+}
+
+.cluster-popup-content {
+    min-width: 320px;
+}
+
+.popup-header {
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.popup-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 0.25rem;
+}
+
+/* Clickable person name in point popup header */
+.popup-name-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.popup-name-link:hover .popup-name {
+    text-decoration: underline;
+    color: #333;
+}
+
+.popup-event-type {
+    font-size: 0.85rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.popup-summary {
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.popup-section {
+    margin-bottom: 1rem;
+}
+
+.popup-section:last-child {
+    margin-bottom: 0;
+}
+
+.popup-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #666;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.popup-value {
+    font-size: 0.9rem;
+    color: #1a1a1a;
+}
+
+.popup-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.5rem 1rem;
+    background-color: #1a1a1a;
+    color: #f5f5f0;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: background-color 0.3s ease;
+}
+
+.popup-link:hover {
+    background-color: #333;
+}
+
+.persons-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+}
+
+.person-item {
+    padding: 0.5rem 0;
+}
+
+.person-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.person-link {
+    color: #1a1a1a;
+    text-decoration: underline;
+}
+
+.person-link:hover {
+    color: #666;
+}
+
+.person-years {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 400;
+}
+
+.person-details {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.15rem;
+}
+
+.person-separator {
+    border-bottom: 1px solid #eee;
+}
+
+.popup-note {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+/* ===== Marker Clusters - Victim Category Breakdown ===== */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+    background-color: transparent !important;
+}
+
+.marker-cluster-category div {
+    background-color: transparent !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50%;
+}
+
+.marker-cluster-category svg {
+    display: block;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Hover effect for clusters */
+.marker-cluster-category:hover svg {
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+}
+
+/* ===== Info Panel ===== */
+.info-panel {
+    background-color: #fff;
+    border-top: 3px double #1a1a1a;
+    padding: 2rem 1.5rem;
+}
+
+.info-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.info-content h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.info-content p {
+    margin-bottom: 1rem;
+    line-height: 1.7;
+    color: #333;
+}
+
+.info-link {
+    margin-top: 1.5rem;
+}
+
+.info-link a {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background-color: #1a1a1a;
+    color: #f5f5f0;
+    text-decoration: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: background-color 0.3s ease;
+}
+
+.info-link a:hover {
+    background-color: #333;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 1024px) {
+    .controls-content {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .stats-section {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        justify-content: space-around;
+    }
+
+    .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .title {
+        font-size: 1.8rem;
+    }
+    
+    .subtitle {
+        font-size: 0.95rem;
+    }
+    
+    .controls-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .filter-section {
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+        padding-right: 0;
+        padding-bottom: 1.5rem;
+    }
+    
+    .filter-section:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    
+    .stats-section {
+        padding-left: 0;
+        flex-direction: column;
+    }
+    
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .map-container {
+        height: 60vh;
+    }
+    
+    .popup-content {
+        min-width: 240px;
+    }
+}
+
+/* ===== Print Styles ===== */
+@media print {
+    .controls-panel,
+    .info-panel {
+        display: none;
+    }
+    
+    .map-container {
+        height: 80vh;
+        border: 2px solid #000;
+    }
+}
+
+/* ===== Accessibility ===== */
+.filter-checkbox:focus-within,
+button:focus,
+a:focus {
+    outline: 2px solid #2196F3;
+    outline-offset: 2px;
+}
+
+/* ===== Loading State ===== */
+.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: 'Lade Daten...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(26, 26, 26, 0.9);
+    color: #f5f5f0;
+    padding: 1rem 2rem;
+    font-weight: 700;
+    z-index: 10000;
+}
+
+/* ===== Filter label with inline color indicators ===== */
+.filter-label .color-indicator {
+    margin-right: 0.25rem;
+}
